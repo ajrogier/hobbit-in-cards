@@ -436,6 +436,23 @@
     .qty-pill button { width: 28px; height: 28px; font-size: 16px; }
     .assign-btn { padding: 5px 11px; font-size: 13px; }
   }
+
+  /* ---------- Sync & owner sign-in ---------- */
+  body.readonly .qty-pill, body.readonly .assign-btn, body.readonly #btn-import { display: none; }
+  #sync-chip.ok { color: var(--leaf); }
+  #sync-chip.warn { color: #d98d5f; border-color: #8a4d2c; }
+  .token-input {
+    width: 100%; margin: 12px 0 4px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--parchment); border-radius: 6px; padding: 8px 10px;
+    font-family: inherit; font-size: 14.5px;
+  }
+  .token-input:focus { outline: none; border-color: var(--border-gold); }
+  .auth-note { font-size: 14.5px; color: var(--parchment-dim); margin: 8px 0; }
+  .auth-note code { color: var(--gold-bright); font-size: 13px; }
+  .auth-note a { color: var(--gold-bright); }
+  .auth-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .auth-msg { font-size: 14px; margin-top: 10px; color: #d98d5f; min-height: 18px; }
 </style>
 </head>
 <body>
@@ -460,7 +477,8 @@
   <span class="nav-spacer"></span>
   <div class="nav-tools">
     <button class="tool-btn" onclick="exportData()" title="Download a backup of your collection">Export</button>
-    <button class="tool-btn" onclick="document.getElementById('import-file').click()" title="Restore a JSON backup or import a ManaBox CSV">Import</button>
+    <button class="tool-btn" id="btn-import" onclick="document.getElementById('import-file').click()" title="Restore a JSON backup or import a ManaBox CSV">Import</button>
+    <button class="tool-btn" id="sync-chip" onclick="openAuth()" title="Collection sync — owner sign-in">…</button>
     <input type="file" id="import-file" accept=".json,.csv" onchange="importFile(this)">
   </div>
 </nav>
@@ -503,12 +521,34 @@
   </div>
 </div>
 
+<div class="modal-wrap" id="auth-modal" onclick="if(event.target===this)closeAuth()">
+  <div class="modal">
+    <h3>Owner sign-in</h3>
+    <div class="sub">Only the keeper of this collection may mark the ledger.</div>
+    <p class="auth-note">
+      The collection is stored as <code>collection.json</code> in the GitHub repository —
+      every change is committed there, so it is versioned and safe. To edit, paste a GitHub
+      <strong>fine-grained personal access token</strong> with access to only this repository
+      and the <strong>Contents: Read and write</strong> permission.
+      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create one here</a>.
+    </p>
+    <p class="auth-note">The token is kept only in this browser — sign in once per device.</p>
+    <input type="password" class="token-input" id="token-input" placeholder="github_pat_…" autocomplete="off">
+    <div class="auth-msg" id="auth-msg"></div>
+    <div class="auth-actions">
+      <button class="tool-btn" onclick="saveToken()">Sign in</button>
+      <button class="tool-btn" id="btn-signout" onclick="signOut()" style="display:none">Sign out</button>
+      <button class="tool-btn" onclick="closeAuth()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <footer>
   Card data &amp; images courtesy of <a href="https://scryfall.com" target="_blank" rel="noopener">Scryfall</a>.
   Unofficial fan project &mdash; Magic: The Gathering is &copy; Wizards of the Coast; The Hobbit is a work of J.R.R. Tolkien.<br>
-  Your collection is stored in this browser. Use <em>Export</em> for a backup.
+  The collection lives in the site's GitHub repository; only its owner can edit. Use <em>Export</em> for a local backup.
 </footer>
 
 <script>
@@ -520,7 +560,19 @@ const OWNED_KEY = 'hob_owned_v1';
 const APPEAR_KEY = 'hob_appear_v1';
 const OVERRIDE_KEY = 'hob_chapters_v1'; // legacy (v1 single-chapter overrides)
 
+/* The collection itself lives in the repo as collection.json — the site reads it for
+   everyone, and writes it (as commits) only when the owner has signed in with a token. */
+const REPO = 'ajrogier/hobbit-in-cards';
+const DATA_PATH = 'collection.json';
+const DATA_API = `https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`;
+const TOKEN_KEY = 'hob_token_v1';
+const DIRTY_KEY = 'hob_dirty_v1';
+
 let cards = [];                 // trimmed card objects
+let token = localStorage.getItem(TOKEN_KEY);   // presence = owner mode (editable)
+let dirty = load(DIRTY_KEY, false);   // local edits not yet committed to the repo
+let remoteSha = null;           // blob sha of collection.json, needed to update it
+let syncTimer = null;
 let owned = load(OWNED_KEY, {});      // id -> {q: regular qty, f: foil qty, s: special-art qty}
 // id -> [ {ch, tag, note} ]  — a card may appear at several points in the story
 let appearances = load(APPEAR_KEY, null);
@@ -689,6 +741,180 @@ function onDataReady() {
   setView(view);
 }
 
+/* ================= Collection sync (GitHub-backed) =================
+   Source of truth is collection.json in the repo. Everyone reads it;
+   writing requires the owner's token (checked by GitHub, not by us).
+   localStorage is kept as a cache / offline buffer: edits land there
+   instantly and are committed shortly after (debounced). If a commit
+   can't happen (offline), the dirty flag survives reloads and the
+   push retries on the next opportunity. */
+function ghHeaders() {
+  const h = { Accept: 'application/vnd.github+json' };
+  if (token) h.Authorization = 'Bearer ' + token;
+  return h;
+}
+function b64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(bin);
+}
+function unb64(b) {
+  return new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, '')), c => c.charCodeAt(0)));
+}
+
+function canEdit() { return !!token; }
+function guard() {
+  if (canEdit()) return false;
+  toast('This is a read-only view — the collection’s keeper signs in with the button above.');
+  return true;
+}
+
+/* Persist every mutation: locally at once, to the repo shortly after. */
+function persist() {
+  save(OWNED_KEY, owned);
+  save(APPEAR_KEY, appearances);
+  if (token) {
+    dirty = true; save(DIRTY_KEY, true);
+    setSyncStatus('pending');
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => pushCollection(), 1500);
+  }
+}
+
+async function loadCollection() {
+  try {
+    const res = await fetch(DATA_API + '?_=' + Date.now(), { headers: ghHeaders() });
+    if (res.status === 404) {           // no collection committed yet
+      remoteSha = null;
+      if (token && (Object.keys(owned).length || Object.keys(appearances).length)) {
+        dirty = true; save(DIRTY_KEY, true);
+        pushCollection();               // first publish of pre-sync local data
+      }
+      return;
+    }
+    if (!res.ok) throw new Error('GitHub ' + res.status);
+    const j = await res.json();
+    remoteSha = j.sha;
+    if (token && dirty) { pushCollection(); return; }   // unpushed local edits win
+    const data = JSON.parse(unb64(j.content));
+    owned = data.owned || {};
+    appearances = data.appearances || {};
+    save(OWNED_KEY, owned); save(APPEAR_KEY, appearances);
+    setSyncStatus(token ? 'saved' : 'viewonly');
+    refresh();
+  } catch (e) {
+    // offline or API hiccup: carry on with the local copy
+    if (token) setSyncStatus(dirty ? 'offline' : 'saved');
+  }
+}
+
+async function pushCollection(isRetry) {
+  if (!token || !dirty) return;
+  clearTimeout(syncTimer);
+  setSyncStatus('saving');
+  try {
+    const body = {
+      message: 'Update collection',
+      content: b64(JSON.stringify({
+        site: 'the-hobbit-in-cards', version: 2,
+        saved_at: new Date().toISOString(),
+        owned, appearances,
+      }, null, 2)),
+    };
+    if (remoteSha) body.sha = remoteSha;
+    const res = await fetch(DATA_API, {
+      method: 'PUT',
+      headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      keepalive: true,
+    });
+    if (res.ok) {
+      remoteSha = (await res.json()).content.sha;
+      dirty = false; save(DIRTY_KEY, false);
+      setSyncStatus('saved');
+    } else if ((res.status === 409 || res.status === 422) && !isRetry) {
+      // our sha is stale (edited from another device) — refetch and retry once
+      const g = await fetch(DATA_API + '?_=' + Date.now(), { headers: ghHeaders() });
+      remoteSha = g.ok ? (await g.json()).sha : null;
+      return pushCollection(true);
+    } else if (res.status === 401 || res.status === 403) {
+      setSyncStatus('error');
+      toast('GitHub rejected the token — use the sync button to sign in again.');
+    } else {
+      throw new Error('GitHub ' + res.status);
+    }
+  } catch (e) {
+    setSyncStatus('offline');   // dirty stays set; retried on next edit / online / hide
+  }
+}
+window.addEventListener('online', () => pushCollection());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && dirty) pushCollection();
+});
+window.addEventListener('beforeunload', e => {
+  if (token && dirty) { pushCollection(); e.preventDefault(); }
+});
+
+function setSyncStatus(s) {
+  const el = document.getElementById('sync-chip');
+  const map = {
+    viewonly: ['view-only \u{1F511}', ''],
+    saved:    ['✓ synced', 'ok'],
+    pending:  ['● saving…', ''],
+    saving:   ['⇅ saving…', ''],
+    error:    ['⚠ sync error', 'warn'],
+    offline:  ['⚠ unsaved', 'warn'],
+  };
+  const [label, cls] = map[s] || map.viewonly;
+  el.textContent = label;
+  el.classList.toggle('ok', cls === 'ok');
+  el.classList.toggle('warn', cls === 'warn');
+}
+
+/* ---- Owner sign-in ---- */
+function openAuth() {
+  document.getElementById('auth-msg').textContent = '';
+  document.getElementById('token-input').value = '';
+  document.getElementById('btn-signout').style.display = token ? 'inline-block' : 'none';
+  document.getElementById('auth-modal').classList.add('show');
+}
+function closeAuth() { document.getElementById('auth-modal').classList.remove('show'); }
+async function saveToken() {
+  const t = document.getElementById('token-input').value.trim();
+  const msg = document.getElementById('auth-msg');
+  if (!t) { msg.textContent = 'Paste a token first.'; return; }
+  msg.textContent = 'Checking the token with GitHub…';
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO}`, {
+      headers: { Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + t },
+    });
+    if (!res.ok) throw new Error('GitHub answered ' + res.status + ' — is the token valid?');
+    const repo = await res.json();
+    if (!repo.permissions || !repo.permissions.push)
+      throw new Error('That token cannot write to ' + REPO + ' — check its repository access and Contents permission.');
+    token = t;
+    localStorage.setItem(TOKEN_KEY, t);
+    document.body.classList.remove('readonly');
+    closeAuth();
+    toast('Welcome back, master burglar — the ledger is yours to edit.');
+    await loadCollection();
+    if (!dirty) setSyncStatus('saved');
+    refresh();
+  } catch (e) {
+    msg.textContent = '✗ ' + e.message;
+  }
+}
+function signOut() {
+  token = null;
+  localStorage.removeItem(TOKEN_KEY);
+  document.body.classList.add('readonly');
+  setSyncStatus('viewonly');
+  closeAuth();
+  refresh();
+  toast('Signed out — this device is view-only now.');
+}
+
 /* ================= Stats ================= */
 function isOwned(id) { return copiesOf(id) > 0; }
 function updateStats() {
@@ -731,7 +957,7 @@ function cardHTML(c, appr) {
       <span class="tag-pill ${appr.tag}" ${appr.note ? `title="${esc(appr.note)}"` : ''}>${TAG_LABEL[appr.tag] || appr.tag}${appr.note ? ' ·' : ''}${appr.note ? ' ' + esc(appr.note) : ''}</span>
       ${isOwned(c.id) && !appr.covered ? '<span class="need-copy">needs another copy</span>' : ''}
     </div>` : '';
-  return `<div class="card ${cls}" data-id="${c.id}" onclick="toggleCard('${c.id}')" title="${esc(c.name)} — click to toggle owned, use the story button for copies & chapters">
+  return `<div class="card ${cls}" data-id="${c.id}" onclick="toggleCard('${c.id}')" title="${esc(c.name)}${canEdit() ? ' — click to toggle owned, use the story button for copies & chapters' : ''}">
     ${img}
     <span class="owned-badge">${qtyLabel || '✓'}</span>
     <span class="qty-pill">
@@ -808,15 +1034,17 @@ function renderStory() {
 
 /* ================= Interactions ================= */
 function toggleCard(id) {
+  if (guard()) return;
   if (isOwned(id)) owned[id] = {q:0, f:0, s:0};
   else owned[id] = {q:1, f:0, s:0};
-  save(OWNED_KEY, owned);
+  persist();
   refresh();
 }
 function bump(id, kind, d) {
+  if (guard()) return;
   const o = owned[id] || (owned[id] = {q:0, f:0, s:0});
   o[kind] = Math.max(0, (o[kind]||0) + d);
-  save(OWNED_KEY, owned);
+  persist();
   refresh();
 }
 function refresh() {
@@ -893,28 +1121,32 @@ function renderModal() {
   `;
 }
 function mBump(kind, d) {
+  if (guard()) return;
   const o = owned[modalCardId] || (owned[modalCardId] = {q:0, f:0, s:0});
   o[kind] = Math.max(0, (o[kind]||0) + d);
-  save(OWNED_KEY, owned);
+  persist();
   renderModal(); refresh();
 }
 function mAppr(i, field, val) {
+  if (guard()) return;
   const list = ensureAppr(modalCardId);
   list[i][field] = val;
   if (field !== 'note' && list[i].tag === 'auto' && field === 'ch') list[i].tag = 'event';
-  save(APPEAR_KEY, appearances);
+  persist();
   renderModal(); refresh();
 }
 function mAddAppr() {
+  if (guard()) return;
   const list = ensureAppr(modalCardId);
   list.push({ ch: list.length ? list[list.length-1].ch : 'wider', tag: 'event', note: '' });
-  save(APPEAR_KEY, appearances);
+  persist();
   renderModal(); refresh();
 }
 function mDelAppr(i) {
+  if (guard()) return;
   const list = ensureAppr(modalCardId);
   list.splice(i, 1);
-  save(APPEAR_KEY, appearances);
+  persist();
   renderModal(); refresh();
 }
 function closeModal() { document.getElementById('modal').classList.remove('show'); }
@@ -934,6 +1166,7 @@ function exportData() {
 }
 
 function importFile(input) {
+  if (guard()) { input.value = ''; return; }
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -957,7 +1190,7 @@ function importJSON(text) {
     for (const [id, ch] of Object.entries(data.chapter_overrides))
       appearances[id] = [{ch, tag: 'event', note: ''}];
   }
-  save(OWNED_KEY, owned); save(APPEAR_KEY, appearances);
+  persist();
   toast('Backup restored.');
   refresh();
 }
@@ -984,7 +1217,7 @@ function importCSV(text) {
     if (foil) o.f += qty; else o.q += qty;
     hits++;
   }
-  save(OWNED_KEY, owned);
+  persist();
   toast(hits ? `Imported ${hits} HOB entries from CSV.` : 'No HOB cards found in that CSV.');
   refresh();
 }
@@ -1008,9 +1241,12 @@ function toast(msg) {
   clearTimeout(t._h);
   t._h = setTimeout(() => t.classList.remove('show'), 2600);
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeAuth(); } });
 
+document.body.classList.toggle('readonly', !token);
+setSyncStatus(token ? (dirty ? 'pending' : 'saved') : 'viewonly');
 loadCards();
+loadCollection();
 </script>
 </body>
 </html>

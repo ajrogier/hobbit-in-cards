@@ -16,9 +16,24 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
 - **Copies vs. the tale** — you track regular, foil ✦, and special-art ★ copies per card.
   If a card has more appearances than you own copies, the uncovered appearances glow amber
   ("needs another copy") — your hunt list for bringing the story to life.
-- Your collection and story curation are saved in your browser (localStorage).
+- **The collection lives in the repo** — every edit is committed to `collection.json`
+  via the GitHub API, so it's versioned, backed up, and shared across your devices.
+  Visitors see the collection read-only; editing requires the owner sign-in (below).
 - **Export** downloads a JSON backup; **Import** restores it — and also accepts a
   **ManaBox CSV export**, so you can scan cards with your phone and import them here.
+
+## Owner sign-in (who can edit)
+
+Write access is GitHub's own: only someone who can commit to this repository can change
+the collection. On each device you edit from, tap the sync button in the nav and paste a
+GitHub **fine-grained personal access token** — create it at
+*Settings → Developer settings → Fine-grained tokens* with **Repository access: only this
+repo** and **Permissions: Contents → Read and write**. The token is stored in that
+browser only. Without a token the site is a read-only view of the collection.
+
+Edits save locally at once and are committed a moment later (debounced). If you're
+offline, the sync chip shows "unsaved" and the commit retries automatically when the
+connection returns — even across page reloads.
 
 ## Deploy on GitHub Pages
 
@@ -42,8 +57,8 @@ No build step, no dependencies — it's one HTML file.
 
 ## Notes
 
-- Collection data lives in the browser you use it in. If you switch browsers or machines,
-  use Export/Import to carry it over.
+- The source of truth is `collection.json` in this repo — its git history doubles as a
+  full undo trail for your collection. localStorage is only a cache/offline buffer.
 - To also track the Commander set (HOC), change `SET_CODE` at the top of the script in
   `index.html` — or ask Claude to add a second tab.
 

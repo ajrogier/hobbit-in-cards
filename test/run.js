@@ -11,6 +11,27 @@ const mock = require('./mock.js');
   await page.route('**/api.scryfall.com/**', route =>
     route.fulfill({ contentType: 'application/json', body: JSON.stringify(mock) }));
 
+  // Mock GitHub: collection.json contents API (404 until first PUT, then serves the stored doc)
+  const gh = { doc: null, n: 0, puts: 0 };
+  const ghRoute = route => {
+    const req = route.request();
+    if (req.url().includes('/contents/collection.json')) {
+      if (req.method() === 'PUT') {
+        gh.puts++; gh.n++;
+        gh.doc = { sha: 's' + gh.n, content: JSON.parse(req.postData()).content };
+        return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ content: { sha: 's' + gh.n } }) });
+      }
+      if (!gh.doc) return route.fulfill({ status: 404, contentType: 'application/json', body: '{"message":"Not Found"}' });
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(gh.doc) });
+    }
+    // repo lookup (token validation)
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ permissions: { push: true } }) });
+  };
+  await page.route('**/api.github.com/**', ghRoute);
+
+  // Owner mode: token present -> editing enabled, edits committed to the mock repo
+  await page.addInitScript(() => localStorage.setItem('hob_token_v1', 'test-token'));
+
   await page.goto('file://' + path.resolve(__dirname, '..', 'index.html'));
   await page.waitForSelector('#view-tracker .card', { timeout: 10000 });
 
@@ -70,10 +91,37 @@ const mock = require('./mock.js');
   const quotePill = await page.locator('.tag-pill.flavor', { hasText: 'sings among the barrels' }).count();
   console.log('flavor-quote pill with note (expect 1):', quotePill);
 
-  // Persistence: reload, check owned survived
+  // Sync: wait for the debounced commit of the edits above, then verify payload
+  await page.waitForFunction(() =>
+    document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
+  const pushed = JSON.parse(Buffer.from(gh.doc.content, 'base64').toString('utf8'));
+  console.log('synced doc owned count (expect 3):', Object.values(pushed.owned).filter(o => o.q + o.f + o.s > 0).length);
+  console.log('synced doc has appearances (expect true):', !!pushed.appearances['mock-20']);
+  console.log('PUT commits made:', gh.puts > 0);
+
+  // Persistence: reload, check owned survived (now served from the mock repo)
   await page.reload();
   await page.waitForSelector('#view-tracker .card');
   console.log('owned after reload (expect 3):', await page.textContent('#stat-owned'));
+
+  // Viewer mode: fresh context without a token -> read-only, but sees the collection
+  const viewerCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const viewer = await viewerCtx.newPage();
+  await viewer.route('**/api.scryfall.com/**', route =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify(mock) }));
+  await viewer.route('**/api.github.com/**', ghRoute);
+  await viewer.goto('file://' + path.resolve(__dirname, '..', 'index.html'));
+  await viewer.waitForSelector('#view-tracker .card');
+  await viewer.waitForFunction(() => document.getElementById('stat-owned').textContent !== '0');
+  console.log('viewer sees owned (expect 3):', await viewer.textContent('#stat-owned'));
+  console.log('viewer is readonly (expect true):', await viewer.evaluate(() => document.body.classList.contains('readonly')));
+  console.log('viewer qty-pill hidden (expect true):', await viewer.locator('.card[data-id="mock-8"] .qty-pill').isHidden());
+  const putsBefore = gh.puts;
+  await viewer.click('.card[data-id="mock-1"]');   // guarded: should not change anything
+  await viewer.waitForTimeout(300);
+  console.log('viewer click changed nothing (expect 3 / true):',
+    await viewer.textContent('#stat-owned'), '/', gh.puts === putsBefore);
+  await viewerCtx.close();
 
   await browser.close();
   console.log('DONE');

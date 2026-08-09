@@ -18,7 +18,30 @@ you where the story is still "uncovered".
 
 ## 2. Data model
 
-All state is in `localStorage`; the card database comes from Scryfall at runtime.
+The card database comes from Scryfall at runtime. The collection itself is stored in the
+repo as `collection.json` (same shape as a JSON export: `{owned, appearances}`), read via
+the GitHub contents API by everyone and written — as commits — only by the signed-in owner.
+`localStorage` acts as an instant-write cache and offline buffer:
+
+```
+collection.json (repo, source of truth)
+  read:  GET  /repos/<repo>/contents/collection.json   (unauthenticated for viewers)
+  write: PUT  same endpoint, with sha + owner token — debounced 1.5s after each edit
+  conflict: 409/422 -> refetch sha, retry once (last write wins)
+
+token   (key hob_token_v1) — fine-grained PAT, Contents R/W on this repo only.
+        Presence of the token = owner mode; without it the UI is read-only
+        (body.readonly hides edit controls, guard() blocks the handlers).
+        Enforcement is GitHub's: the token is validated against repo.permissions.push,
+        and the API rejects writes from anyone else regardless of the UI.
+
+dirty   (key hob_dirty_v1) — set on every local edit, cleared on successful commit;
+        survives reloads, so offline edits are pushed on the next visit
+        ('online' event, visibilitychange->hidden, and beforeunload also flush).
+        On load: remote wins unless dirty (unpushed local edits win, then push).
+```
+
+Everything below is unchanged and still in `localStorage`:
 
 ```
 cards        (cache, key hob_cards_v1, 24h TTL)
@@ -75,9 +98,11 @@ longer apply to that card (`ensureAppr`). Tune the regexes freely; they only aff
 
 ## 5. Testing
 
-`test/run.js` is a Playwright script that opens the page with `api.scryfall.com` intercepted and
-`test/mock.js` served instead, then exercises: load, toggles, filters, search, story rendering,
-multi-appearance editing, coverage, and localStorage persistence across reload.
+`test/run.js` is a Playwright script that opens the page with `api.scryfall.com` intercepted
+(`test/mock.js` served instead) and `api.github.com` mocked in-memory (404 until the first PUT,
+then serving the committed doc). It exercises: load, toggles, filters, search, story rendering,
+multi-appearance editing, coverage, sync commits (owner mode), persistence across reload, and
+read-only viewer mode in a token-less browser context.
 
 ```
 cd test && npm install playwright && node run.js
