@@ -437,6 +437,65 @@
     .assign-btn { padding: 5px 11px; font-size: 13px; }
   }
 
+  /* ---------- User-authored outline ---------- */
+  .subsection { margin: 26px 0 6px 14px; padding-left: 16px; border-left: 1px solid var(--border); }
+  .sub-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .sub-title { font-family: 'Cinzel', serif; font-size: 17.5px; font-weight: 600; color: var(--parchment); }
+  .sec-controls { display: inline-flex; gap: 4px; }
+  .sec-controls button {
+    width: 26px; height: 26px; border-radius: 6px;
+    border: 1px solid var(--border); background: none;
+    color: var(--parchment-dim); cursor: pointer; font-size: 13px;
+  }
+  .sec-controls button:hover:not(:disabled) { border-color: var(--border-gold); color: var(--gold-bright); }
+  .sec-controls button:disabled { opacity: .3; cursor: default; }
+  .sec-add { margin: 6px 0 2px; }
+  .story-empty { text-align: center; padding: 30px 0 50px; }
+  .story-empty .tool-btn { margin-top: 14px; }
+  .entry-del {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid var(--border); background: none;
+    color: #d98d5f; cursor: pointer; font-size: 11px; flex-shrink: 0;
+  }
+  .entry-del:hover { border-color: #8a4d2c; }
+  .tag-pill.note { color: #e0c8a0; border-color: #6b5a33; font-style: italic; }
+  .add-card .add-tile { gap: 4px; color: var(--ink-faint); border-style: dashed; cursor: pointer; }
+  .add-card .add-plus { font-size: 34px; line-height: 1; color: var(--gold); }
+  .add-card:hover .add-tile { border-color: var(--border-gold); color: var(--parchment-dim); }
+  .place-label { font-size: 14.5px; color: var(--parchment); flex: 0 1 auto; }
+
+  /* ---------- Card picker ---------- */
+  .modal.picker { max-width: 820px; }
+  .pick-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 12px 10px; margin-top: 14px; max-height: 52vh; overflow-y: auto; padding-right: 4px;
+  }
+  .pick { position: relative; cursor: pointer; }
+  .pick img, .pick .noimg {
+    width: 100%; aspect-ratio: 488/680; border-radius: 4.75% / 3.5%;
+    display: block; background: var(--bg-card); box-shadow: 0 2px 8px rgba(0,0,0,.4);
+  }
+  .pick .noimg {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; padding: 8px; text-align: center; border: 1px solid var(--border);
+    color: var(--parchment-dim); font-size: 12.5px;
+  }
+  .pick.pick-unowned img, .pick.pick-unowned .noimg { filter: grayscale(.7) brightness(.65); }
+  .pick.in img, .pick.in .noimg { box-shadow: 0 0 0 2px var(--gold); filter: none; }
+  .pick-badge {
+    position: absolute; top: 5px; right: 5px;
+    min-width: 22px; height: 22px; padding: 0 5px; border-radius: 11px;
+    background: rgba(19,18,16,.85); border: 1px solid var(--border);
+    color: var(--parchment-dim); font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pick.in .pick-badge { color: var(--gold-bright); border-color: var(--border-gold); }
+  .pick-name {
+    font-size: 12.5px; line-height: 1.25; margin-top: 5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pick-name .cn { color: var(--ink-faint); font-size: 11.5px; }
+
   /* ---------- Sync & owner sign-in ---------- */
   body.readonly .qty-pill, body.readonly .assign-btn, body.readonly #btn-import { display: none; }
   #sync-chip.ok { color: var(--leaf); }
@@ -508,7 +567,7 @@
   </section>
 
   <section id="view-story" style="display:none">
-    <p class="story-intro">In a hole in the ground there lived a hobbit &mdash; and here is his whole adventure, chapter by chapter, in the cards of the set. Bright cards are in your collection; grey ones are still out there. A card may appear at several points of the tale &mdash; each appearance carries a pill saying <em>why</em> it belongs there (a character, an event, flavor text quoting the book, or the art itself). Own fewer copies than appearances, and the uncovered ones glow amber: your hunt list for bringing the story to life. Hover a card and press <em>story</em> to manage its copies and appearances.</p>
+    <p class="story-intro" id="story-intro">In a hole in the ground there lived a hobbit &mdash; and here his adventure can be retold in the cards of the set, exactly as you choose to arrange it. Create your own sections and subsections, then fill them from the set: search by name, type or flavor text, and pick the exact printing &mdash; every art is its own card. A card may be placed at many points of the tale; own fewer copies than placements and the extras glow amber, your hunt list for bringing the story to life.</p>
     <div id="story-chapters"></div>
   </section>
 </main>
@@ -518,6 +577,16 @@
     <h3 id="modal-title">Assign to chapter</h3>
     <div class="sub" id="modal-sub"></div>
     <div id="modal-options"></div>
+  </div>
+</div>
+
+<div class="modal-wrap" id="picker-modal" onclick="if(event.target===this)closePicker()">
+  <div class="modal picker">
+    <h3 id="picker-title">Add cards</h3>
+    <div class="sub">Search the whole set &mdash; name, type or flavor text. Every printing is its own card, so pick your favorite art. Tap to place, tap again to take back out.</div>
+    <input class="token-input" id="picker-search" placeholder="Search… try “gollum”, “dragon”, or a flavor quote" oninput="renderPicker()" autocomplete="off">
+    <div class="pick-grid" id="picker-results"></div>
+    <div class="auth-actions"><button class="tool-btn" onclick="closePicker()">Done</button></div>
   </div>
 </div>
 
@@ -557,8 +626,7 @@ const SET_CODE = 'hob';
 const CACHE_KEY = 'hob_cards_v1';
 const CACHE_HOURS = 24;
 const OWNED_KEY = 'hob_owned_v1';
-const APPEAR_KEY = 'hob_appear_v1';
-const OVERRIDE_KEY = 'hob_chapters_v1'; // legacy (v1 single-chapter overrides)
+const STORY_KEY = 'hob_story_v3';
 
 /* The collection itself lives in the repo as collection.json — the site reads it for
    everyone, and writes it (as commits) only when the owner has signed in with a token. */
@@ -574,21 +642,11 @@ let dirty = load(DIRTY_KEY, false);   // local edits not yet committed to the re
 let remoteSha = null;           // blob sha of collection.json, needed to update it
 let syncTimer = null;
 let owned = load(OWNED_KEY, {});      // id -> {q: regular qty, f: foil qty, s: special-art qty}
-// id -> [ {ch, tag, note} ]  — a card may appear at several points in the story
-let appearances = load(APPEAR_KEY, null);
-if (!appearances) {
-  appearances = {};
-  const legacy = load(OVERRIDE_KEY, {});
-  for (const [id, ch] of Object.entries(legacy)) appearances[id] = [{ch, tag: 'event', note: ''}];
-}
-
-const TAGS = [
-  ['character', 'Character / being from the book'],
-  ['event',     'Event / scene from the book'],
-  ['flavor',    'Flavor text quotes the book'],
-  ['art',       'The art shows this moment'],
-];
-const TAG_LABEL = { character: 'character', event: 'event', flavor: '❝ book quote', art: 'art moment', auto: 'auto-placed' };
+/* The tale is a user-authored outline, blank until you write it:
+   { sections: [ { id, title, blurb, cards: [entry], subs: [ {id, title, blurb, cards: [entry]} ] } ] }
+   entry: { cardId, note } — the same card (or different printings of it) may be
+   placed at any number of points; copies owned cover entries in reading order. */
+let story = load(STORY_KEY, { sections: [] });
 let view = 'tracker';
 let rarityFilter = new Set();
 let missingOnly = false, ownedOnly = false;
@@ -599,88 +657,42 @@ function load(k, fallback) {
 }
 function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 
-/* ================= Chapters ================= */
-const CHAPTERS = [
-  { key:'ch1',  num:'I',     title:'An Unexpected Party',
-    blurb:'Thirteen dwarves and a wizard descend upon Bag End, and a very respectable hobbit is signed on as burglar.',
-    rx:/unexpected|party guest|bag end|banquet|burglar|contract|feast|hobbit hole|bagg?ins, proud|shire|hospitalit|pantry|dwarves of the compan|oakenshield's compan|balin|dwalin|bifur|bofur|bombur|oin\b|gloin|nori\b|dori\b|ori\b|fili|kili/i },
-  { key:'ch2',  num:'II',    title:'Roast Mutton',
-    blurb:'Three trolls, one talking purse, and a wizard’s trick of the light. The company acquires some very good blades.',
-    rx:/troll|mutton|william|bert\b|huggins/i },
-  { key:'ch3',  num:'III',   title:'A Short Rest',
-    blurb:'The Last Homely House east of the sea. Elrond reads the moon-letters on Thror’s map.',
-    rx:/rivendell|elrond|homely house|moon.?letter|moon.?rune/i },
-  { key:'ch4',  num:'IV',    title:'Over Hill and Under Hill',
-    blurb:'Stone-giants hurl rocks in the thunder, and goblins drag the company into the deep tunnels of the Misty Mountains.',
-    rx:/goblin|misty mountain|stone.?giant|thunder.?battle|glamdring|orcrist/i },
-  { key:'ch5',  num:'V',     title:'Riddles in the Dark',
-    blurb:'Deep beneath the mountains, Bilbo finds a ring, meets Gollum, and wins the strangest game ever played.',
-    rx:/gollum|riddle|precious|invisib|deep.?lake|thief in the night$|magic ring|the one ring|one ring/i },
-  { key:'ch6',  num:'VI',    title:'Out of the Frying-Pan into the Fire',
-    blurb:'Wargs and goblins ring the burning trees — until the Eagles come.',
-    rx:/warg|eagle|frying.?pan|fifteen birds|gwaihir|pine\b|fire.?tree/i },
-  { key:'ch7',  num:'VII',   title:'Queer Lodgings',
-    blurb:'Beorn the skin-changer, his great wooden hall, and honey-cakes for the road.',
-    rx:/beorn|skin.?changer|bee\b|bees\b|honey|carrock/i },
-  { key:'ch8',  num:'VIII',  title:'Flies and Spiders',
-    blurb:'The dark of Mirkwood, the enchanted stream, and Sting earns its name among the webs.',
-    rx:/spider|mirkwood|attercop|web\b|webs\b|enchanted (stream|river)|sting/i },
-  { key:'ch9',  num:'IX',    title:'Barrels Out of Bond',
-    blurb:'Prisoners of the Elvenking — until a burglar and thirteen barrels ride the river out.',
-    rx:/thranduil|elvenking|barrel|wood.?elf|woodland realm|silvan|raft|cellar/i },
-  { key:'ch10', num:'X',     title:'A Warm Welcome',
-    blurb:'Lake-town greets the King under the Mountain with songs and feasting.',
-    rx:/lake.?town|esgaroth|master of lake/i },
-  { key:'ch11', num:'XI',    title:'On the Doorstep',
-    blurb:'The last light of Durin’s Day reveals the keyhole in the mountain’s side.',
-    rx:/durin's day|doorstep|secret door|keyhole|thrush|ravenhill|lonely mountain/i },
-  { key:'ch12', num:'XII',   title:'Inside Information',
-    blurb:'A burglar creeps down the tunnel and speaks with Smaug the Magnificent, greatest of calamities.',
-    rx:/smaug|dragon.?hoard|dragon.?cursed|treasure|arkenstone|gilded|hoard/i },
-  { key:'ch13', num:'XIII',  title:'Not at Home',
-    blurb:'The dragon is gone. The dwarves walk the great halls of their fathers, and Bilbo pockets something that is not his to keep.',
-    rx:/halls of (erebor|durin)|erebor|mail.?coat|mithril/i },
-  { key:'ch14', num:'XIV',   title:'Fire and Water',
-    blurb:'Smaug falls upon Lake-town, and Bard the Bowman looses the Black Arrow.',
-    rx:/bard\b|black arrow|bowman|burning of|dale\b|queen of dale/i },
-  { key:'ch15', num:'XV',    title:'The Gathering of the Clouds',
-    blurb:'Ravens bring news; armies march on the Mountain; Thorin will not part with one coin of the treasure.',
-    rx:/raven|ro[aä]c|siege|gathering of/i },
-  { key:'ch16', num:'XVI',   title:'A Thief in the Night',
-    blurb:'By night, Bilbo hands the Arkenstone to the besiegers, hoping to buy peace with his share.',
-    rx:/thief in the night/i },
-  { key:'ch17', num:'XVII',  title:'The Clouds Burst',
-    blurb:'Goblins and wargs pour down upon the Mountain: the Battle of Five Armies.',
-    rx:/five armies|bolg|dain|battle of|azog|war.?host/i },
-  { key:'ch18', num:'XVIII', title:'The Return Journey',
-    blurb:'Farewells are said under the Mountain, and the long road home begins.',
-    rx:/return journey|farewell|funeral/i },
-  { key:'ch19', num:'XIX',   title:'The Last Stage',
-    blurb:'Back to Bag End — auction in progress — and a hobbit who is never quite respectable again.',
-    rx:/last stage|auction|back again|quite a little fellow/i },
-  { key:'wider', num:'❖',   title:'The Wider Tale',
-    blurb:'Cards of Middle-earth that belong to the whole journey rather than a single chapter — assign them where you think they fit best.',
-    rx:null },
-];
+/* ================= The tale (user-authored outline) ================= */
+function sid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function rom(n) {
+  const t = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+  let out = ''; for (const [v, s] of t) while (n >= v) { out += s; n -= v; } return out;
+}
+function findSection(secId) { return story.sections.find(s => s.id === secId); }
+function findTarget(secId, subId) {
+  const sec = findSection(secId);
+  if (!sec) return null;
+  if (!subId) return sec;
+  return (sec.subs || []).find(b => b.id === subId) || null;
+}
+/* Walk every entry in reading order: cb(entry, sec, sub|null, indexInList) */
+function forEachEntry(cb) {
+  for (const sec of story.sections) {
+    (sec.cards || []).forEach((e, i) => cb(e, sec, null, i));
+    for (const sub of (sec.subs || []))
+      (sub.cards || []).forEach((e, i) => cb(e, sec, sub, i));
+  }
+}
+/* Copies cover a card's entries in reading order; returns Map(entry -> covered) */
+function coverageFlags() {
+  const seen = {}, flags = new Map();
+  forEachEntry(e => {
+    seen[e.cardId] = (seen[e.cardId] || 0) + 1;
+    flags.set(e, seen[e.cardId] <= copiesOf(e.cardId));
+  });
+  return flags;
+}
+function placementsOf(cardId) {
+  const out = [];
+  forEachEntry((e, sec, sub, i) => { if (e.cardId === cardId) out.push({ e, sec, sub, i }); });
+  return out;
+}
 
-function autoChapter(card) {
-  const hay = `${card.name} ${card.type_line||''} ${card.flavor||''} ${card.oracle||''}`;
-  for (const ch of CHAPTERS) {
-    if (ch.rx && ch.rx.test(hay)) return ch.key;
-  }
-  return 'wider';
-}
-function appearancesOf(card) {
-  return appearances[card.id] ?? [{ch: autoChapter(card), tag: 'auto', note: ''}];
-}
-/* Materialize the auto appearance the first time the user edits a card's story */
-function ensureAppr(id) {
-  if (!appearances[id]) {
-    const c = cards.find(x => x.id === id);
-    appearances[id] = appearancesOf(c).map(a => ({...a}));
-  }
-  return appearances[id];
-}
 function copiesOf(id) { const o = owned[id]; return o ? (o.q||0) + (o.f||0) + (o.s||0) : 0; }
 
 /* ================= Card loading ================= */
@@ -773,7 +785,7 @@ function guard() {
 /* Persist every mutation: locally at once, to the repo shortly after. */
 function persist() {
   save(OWNED_KEY, owned);
-  save(APPEAR_KEY, appearances);
+  save(STORY_KEY, story);
   if (token) {
     dirty = true; save(DIRTY_KEY, true);
     setSyncStatus('pending');
@@ -787,7 +799,7 @@ async function loadCollection() {
     const res = await fetch(DATA_API + '?_=' + Date.now(), { headers: ghHeaders() });
     if (res.status === 404) {           // no collection committed yet
       remoteSha = null;
-      if (token && (Object.keys(owned).length || Object.keys(appearances).length)) {
+      if (token && (Object.keys(owned).length || story.sections.length)) {
         dirty = true; save(DIRTY_KEY, true);
         pushCollection();               // first publish of pre-sync local data
       }
@@ -799,8 +811,8 @@ async function loadCollection() {
     if (token && dirty) { pushCollection(); return; }   // unpushed local edits win
     const data = JSON.parse(unb64(j.content));
     owned = data.owned || {};
-    appearances = data.appearances || {};
-    save(OWNED_KEY, owned); save(APPEAR_KEY, appearances);
+    story = data.story || { sections: [] };
+    save(OWNED_KEY, owned); save(STORY_KEY, story);
     setSyncStatus(token ? 'saved' : 'viewonly');
     refresh();
   } catch (e) {
@@ -817,9 +829,9 @@ async function pushCollection(isRetry) {
     const body = {
       message: 'Update collection',
       content: b64(JSON.stringify({
-        site: 'the-hobbit-in-cards', version: 2,
+        site: 'the-hobbit-in-cards', version: 3,
         saved_at: new Date().toISOString(),
-        owned, appearances,
+        owned, story,
       }, null, 2)),
     };
     if (remoteSha) body.sha = remoteSha;
@@ -954,8 +966,9 @@ function cardHTML(c, appr) {
     ? `<img loading="lazy" src="${c.img}" alt="${esc(c.name)}">`
     : `<div class="noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`;
   const tagRow = appr ? `<div class="appear-tag">
-      <span class="tag-pill ${appr.tag}" ${appr.note ? `title="${esc(appr.note)}"` : ''}>${TAG_LABEL[appr.tag] || appr.tag}${appr.note ? ' ·' : ''}${appr.note ? ' ' + esc(appr.note) : ''}</span>
+      ${appr.note ? `<span class="tag-pill note">${esc(appr.note)}</span>` : ''}
       ${isOwned(c.id) && !appr.covered ? '<span class="need-copy">needs another copy</span>' : ''}
+      ${appr.loc && canEdit() ? `<button class="entry-del" onclick="event.stopPropagation();removeEntry('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i})" title="Remove from this part of the tale">✕</button>` : ''}
     </div>` : '';
   return `<div class="card ${cls}" data-id="${c.id}" onclick="toggleCard('${c.id}')" title="${esc(c.name)}${canEdit() ? ' — click to toggle owned, use the story button for copies & chapters' : ''}">
     ${img}
@@ -991,45 +1004,170 @@ function renderTracker() {
 }
 
 function renderStory() {
-  // Each card may appear at several points in the tale. A card's owned copies
-  // cover its appearances in order: own 2 copies of a card with 3 appearances,
-  // and the third appearance still "needs another copy".
-  const byCh = {};
-  for (const c of cards) {
-    const n = copiesOf(c.id);
-    appearancesOf(c).forEach((a, i) => {
-      (byCh[a.ch] ??= []).push({ card: c, appr: {...a, covered: i < n} });
-    });
+  const el = document.getElementById('story-chapters');
+  document.getElementById('story-intro').style.display = story.sections.length ? 'none' : 'block';
+  if (!story.sections.length) {
+    el.innerHTML = `<div class="story-empty">
+      <p class="empty-ch">The page is blank — no tale has been written yet.</p>
+      ${canEdit() ? `<button class="tool-btn" onclick="addSection()">+ Begin the tale: add a section</button>` : ''}
+    </div>`;
+    return;
   }
+  const byId = Object.fromEntries(cards.map(c => [c.id, c]));
+  const flags = coverageFlags();
+  const grid = (list, secId, subId) => {
+    const cardsHTML = (list || [])
+      .map((e, i) => {
+        const c = byId[e.cardId];
+        if (!c) return '';
+        return cardHTML(c, { note: e.note, covered: flags.get(e), loc: { sec: secId, sub: subId, i } });
+      }).join('');
+    const add = canEdit() ? `<div class="card add-card" onclick="openPicker('${secId}','${subId || ''}')" title="Add cards from the set">
+        <div class="noimg add-tile"><span class="add-plus">+</span><span>Add cards</span></div>
+      </div>` : '';
+    return `<div class="grid">${cardsHTML}${add}</div>`
+      + (!(list || []).length && !canEdit() ? `<p class="empty-ch">Nothing placed here yet.</p>` : '');
+  };
+  const progress = list => {
+    if (!list.length) return '';
+    const got = list.filter(e => flags.get(e)).length;
+    const pct = Math.round(got / list.length * 100);
+    return `<span class="ch-progress">${got}/${list.length}
+      <span class="mini-track"><span class="mini-fill" style="width:${pct}%;display:block"></span></span></span>`;
+  };
+  const controls = (secId, subId, idx, max) => canEdit() ? `<span class="sec-controls">
+      <button onclick="renameSection('${secId}','${subId || ''}')" title="Rename / edit description">✎</button>
+      <button onclick="moveSection('${secId}','${subId || ''}',-1)" title="Move up" ${idx === 0 ? 'disabled' : ''}>↑</button>
+      <button onclick="moveSection('${secId}','${subId || ''}',1)" title="Move down" ${idx === max ? 'disabled' : ''}>↓</button>
+      <button onclick="deleteSection('${secId}','${subId || ''}')" title="Delete">✕</button>
+    </span>` : '';
   let html = '';
-  for (const ch of CHAPTERS) {
-    const list = byCh[ch.key] || [];
-    if (!list.length && ch.key !== 'wider') {
-      html += `<section class="chapter">
-        <div class="chapter-head">
-          <span class="ch-num">${ch.num}</span><span class="ch-title">${ch.title}</span>
-        </div>
-        <p class="ch-blurb">${ch.blurb}</p>
-        <p class="empty-ch">No cards placed in this chapter yet — use a card's <em>story</em> button to add an appearance here.</p>
-      </section>`;
-      continue;
-    }
-    if (!list.length) continue;
-    const got = list.filter(e => e.appr.covered).length;
-    const pct = Math.round(got/list.length*100);
+  story.sections.forEach((sec, si) => {
+    const allEntries = [...(sec.cards || []), ...(sec.subs || []).flatMap(b => b.cards || [])];
     html += `<section class="chapter">
       <div class="chapter-head">
-        <span class="ch-num">${ch.num}</span>
-        <span class="ch-title">${ch.title}</span>
-        <span class="ch-progress">${got}/${list.length}
-          <span class="mini-track"><span class="mini-fill" style="width:${pct}%;display:block"></span></span>
-        </span>
+        <span class="ch-num">${rom(si + 1)}</span>
+        <span class="ch-title">${esc(sec.title)}</span>
+        ${controls(sec.id, null, si, story.sections.length - 1)}
+        ${progress(allEntries)}
       </div>
-      <p class="ch-blurb">${ch.blurb}</p>
-      <div class="grid">${list.map(e => cardHTML(e.card, e.appr)).join('')}</div>
+      ${sec.blurb ? `<p class="ch-blurb">${esc(sec.blurb)}</p>` : ''}
+      ${grid(sec.cards, sec.id, null)}
+      ${(sec.subs || []).map((sub, bi) => `
+        <div class="subsection">
+          <div class="sub-head">
+            <span class="sub-title">${esc(sub.title)}</span>
+            ${controls(sec.id, sub.id, bi, sec.subs.length - 1)}
+            ${progress(sub.cards || [])}
+          </div>
+          ${sub.blurb ? `<p class="ch-blurb">${esc(sub.blurb)}</p>` : ''}
+          ${grid(sub.cards, sec.id, sub.id)}
+        </div>`).join('')}
+      ${canEdit() ? `<button class="tool-btn sec-add" onclick="addSection('${sec.id}')">+ Add subsection</button>` : ''}
     </section>`;
+  });
+  if (canEdit()) html += `<button class="tool-btn sec-add" onclick="addSection()">+ Add section</button>`;
+  el.innerHTML = html;
+}
+
+/* ---- Outline editing (owner only) ---- */
+function addSection(parentSecId) {
+  if (guard()) return;
+  const what = parentSecId ? 'subsection' : 'section';
+  const title = (prompt(`Title of the new ${what}:`) || '').trim();
+  if (!title) return;
+  const node = { id: sid(), title, blurb: '', cards: [] };
+  if (parentSecId) {
+    const sec = findSection(parentSecId);
+    if (!sec) return;
+    (sec.subs ??= []).push(node);
+  } else {
+    node.subs = [];
+    story.sections.push(node);
   }
-  document.getElementById('story-chapters').innerHTML = html;
+  persist(); renderStory();
+}
+function renameSection(secId, subId) {
+  if (guard()) return;
+  const t = findTarget(secId, subId);
+  if (!t) return;
+  const title = prompt('Title:', t.title);
+  if (title === null) return;
+  if (title.trim()) t.title = title.trim();
+  const blurb = prompt('Description (optional, shown under the title):', t.blurb || '');
+  if (blurb !== null) t.blurb = blurb.trim();
+  persist(); renderStory();
+}
+function moveSection(secId, subId, d) {
+  if (guard()) return;
+  const list = subId ? (findSection(secId)?.subs || []) : story.sections;
+  const i = list.findIndex(x => x.id === (subId || secId));
+  const j = i + d;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  persist(); renderStory();
+}
+function deleteSection(secId, subId) {
+  if (guard()) return;
+  const t = findTarget(secId, subId);
+  if (!t) return;
+  const n = (t.cards || []).length + (t.subs || []).reduce((a, b) => a + (b.cards || []).length, 0);
+  if (!confirm(`Delete “${t.title}”${n ? ` and its ${n} card placement${n === 1 ? '' : 's'}` : ''}? (Your owned copies are not affected.)`)) return;
+  if (subId) {
+    const sec = findSection(secId);
+    sec.subs = sec.subs.filter(b => b.id !== subId);
+  } else {
+    story.sections = story.sections.filter(s => s.id !== secId);
+  }
+  persist(); renderStory();
+}
+function removeEntry(secId, subId, i) {
+  if (guard()) return;
+  const t = findTarget(secId, subId);
+  if (!t || !t.cards[i]) return;
+  t.cards.splice(i, 1);
+  persist(); refresh();
+}
+
+/* ---- Card picker: search the set, tap to place ---- */
+let pickerTarget = null;   // { secId, subId }
+function openPicker(secId, subId) {
+  if (guard()) return;
+  pickerTarget = { secId, subId: subId || null };
+  const t = findTarget(secId, subId);
+  document.getElementById('picker-title').textContent = 'Add cards — ' + (t ? t.title : '');
+  document.getElementById('picker-search').value = '';
+  renderPicker();
+  document.getElementById('picker-modal').classList.add('show');
+  document.getElementById('picker-search').focus();
+}
+function closePicker() { document.getElementById('picker-modal').classList.remove('show'); renderStory(); }
+function renderPicker() {
+  const t = pickerTarget && findTarget(pickerTarget.secId, pickerTarget.subId);
+  if (!t) return;
+  const q = document.getElementById('picker-search').value.trim().toLowerCase();
+  const inHere = {};
+  (t.cards || []).forEach(e => { inHere[e.cardId] = (inHere[e.cardId] || 0) + 1; });
+  let list = cards;
+  if (q) list = list.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    (c.type_line || '').toLowerCase().includes(q) ||
+    (c.flavor || '').toLowerCase().includes(q));
+  document.getElementById('picker-results').innerHTML = list.map(c => `
+    <div class="pick ${inHere[c.id] ? 'in' : ''} ${isOwned(c.id) ? '' : 'pick-unowned'}" onclick="pickCard('${c.id}')" title="${esc(c.name)}${c.flavor ? ' — ' + esc(c.flavor) : ''}">
+      ${c.img ? `<img loading="lazy" src="${c.img}" alt="${esc(c.name)}">`
+              : `<div class="noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`}
+      <span class="pick-badge">${inHere[c.id] ? '✓' + (inHere[c.id] > 1 ? '×' + inHere[c.id] : '') : '+'}</span>
+      <div class="pick-name">${esc(c.name)} <span class="cn">#${c.cn}</span></div>
+    </div>`).join('') || `<p class="empty-ch">Nothing in the set matches “${esc(q)}”.</p>`;
+}
+function pickCard(cardId) {
+  const t = pickerTarget && findTarget(pickerTarget.secId, pickerTarget.subId);
+  if (!t) return;
+  const i = (t.cards || []).findIndex(e => e.cardId === cardId);
+  if (i >= 0) t.cards.splice(i, 1);              // tap again to take it back out
+  else (t.cards ??= []).push({ cardId, note: '' });
+  persist(); renderPicker(); updateStats();
 }
 
 /* ================= Interactions ================= */
@@ -1079,20 +1217,41 @@ function openModal(id) {
 function renderModal() {
   const c = cards.find(x => x.id === modalCardId);
   const o = owned[c.id] || {q:0, f:0, s:0};
-  const apprs = appearancesOf(c);
+  const places = placementsOf(c.id);
   const copies = copiesOf(c.id);
   document.getElementById('modal-title').textContent = c.name;
   document.getElementById('modal-sub').textContent = c.type_line || '';
 
-  const chOpts = cur => CHAPTERS.map(ch =>
-    `<option value="${ch.key}" ${ch.key===cur?'selected':''}>${ch.num === '❖' ? '' : ch.num + ' · '}${ch.title}</option>`).join('');
-  const tagOpts = cur => TAGS.map(([k, label]) =>
-    `<option value="${k}" ${k===cur?'selected':''}>${label}</option>`).join('')
-    + (cur === 'auto' ? `<option value="auto" selected>auto-placed (pick a reason)</option>` : '');
+  const summary = !places.length
+    ? `Not placed in the tale yet` + (copies ? ` · ${copies} cop${copies===1?'y':'ies'} owned.` : '.')
+    : copies >= places.length
+      ? `${places.length} placement${places.length===1?'':'s'} in the tale · ${copies} cop${copies===1?'y':'ies'} owned — the tale is covered.`
+      : `${places.length} placement${places.length===1?'':'s'} in the tale · ${copies} cop${copies===1?'y':'ies'} owned — ${places.length-copies} more cop${places.length-copies===1?'y':'ies'} wanted.`;
 
-  const summary = copies >= apprs.length
-    ? `${apprs.length} appearance${apprs.length===1?'':'s'} in the tale · ${copies} cop${copies===1?'y':'ies'} owned — the tale is covered.`
-    : `${apprs.length} appearance${apprs.length===1?'':'s'} in the tale · ${copies} cop${copies===1?'y':'ies'} owned — ${apprs.length-copies} more cop${apprs.length-copies===1?'y':'ies'} wanted.`;
+  const targets = [];
+  for (const sec of story.sections) {
+    targets.push({ key: sec.id + '/', label: sec.title });
+    for (const sub of (sec.subs || [])) targets.push({ key: sec.id + '/' + sub.id, label: sec.title + ' › ' + sub.title });
+  }
+  const placeRows = canEdit() ? places.map((p, n) => `
+      <div class="appear-row">
+        <span class="place-label">${esc(p.sec.title)}${p.sub ? ' › ' + esc(p.sub.title) : ''}</span>
+        <input type="text" value="${esc(p.e.note || '')}" placeholder="note — e.g. “finds the ring”"
+          onchange="mNote(${n}, this.value)">
+        <button class="del" onclick="mRemove(${n})" title="Remove this placement">✕</button>
+      </div>`).join('')
+    : places.map(p => `
+      <div class="appear-row">
+        <span class="place-label">${esc(p.sec.title)}${p.sub ? ' › ' + esc(p.sub.title) : ''}</span>
+        ${p.e.note ? `<span class="tag-pill note">${esc(p.e.note)}</span>` : ''}
+      </div>`).join('');
+  const addRow = canEdit()
+    ? (targets.length ? `
+      <div class="appear-row">
+        <select id="modal-add-target">${targets.map(t => `<option value="${t.key}">${esc(t.label)}</option>`).join('')}</select>
+        <button class="tool-btn" onclick="mAddTo()">+ Place here</button>
+      </div>` : `<p class="empty-ch">The tale has no sections yet — create one in The Tale view first.</p>`)
+    : '';
 
   document.getElementById('modal-options').innerHTML = `
     <h4>Copies owned</h4>
@@ -1107,17 +1266,10 @@ function renderModal() {
         <button onclick="mBump('s',-1)">−</button><b>${o.s||0}</b><button onclick="mBump('s',1)">+</button>
       </span>
     </div>
-    <div class="copy-summary ${copies < apprs.length ? 'short' : ''}">${summary}</div>
-    <h4>Appearances in the story</h4>
-    ${apprs.map((a, i) => `
-      <div class="appear-row">
-        <select onchange="mAppr(${i},'ch',this.value)" title="Chapter">${chOpts(a.ch)}</select>
-        <select onchange="mAppr(${i},'tag',this.value)" title="Why this card belongs here">${tagOpts(a.tag)}</select>
-        <input type="text" value="${esc(a.note||'')}" placeholder="note — e.g. “finds the ring”"
-          onchange="mAppr(${i},'note',this.value)">
-        <button class="del" onclick="mDelAppr(${i})" title="Remove this appearance">✕</button>
-      </div>`).join('')}
-    <button class="tool-btn add-appear" onclick="mAddAppr()">+ Add appearance</button>
+    <div class="copy-summary ${places.length && copies < places.length ? 'short' : ''}">${summary}</div>
+    <h4>In the tale</h4>
+    ${placeRows || (canEdit() ? '' : '<p class="empty-ch">Not placed in the tale.</p>')}
+    ${addRow}
   `;
 }
 function mBump(kind, d) {
@@ -1127,25 +1279,29 @@ function mBump(kind, d) {
   persist();
   renderModal(); refresh();
 }
-function mAppr(i, field, val) {
+function mNote(n, val) {
   if (guard()) return;
-  const list = ensureAppr(modalCardId);
-  list[i][field] = val;
-  if (field !== 'note' && list[i].tag === 'auto' && field === 'ch') list[i].tag = 'event';
+  const p = placementsOf(modalCardId)[n];
+  if (!p) return;
+  p.e.note = val.trim();
   persist();
   renderModal(); refresh();
 }
-function mAddAppr() {
+function mRemove(n) {
   if (guard()) return;
-  const list = ensureAppr(modalCardId);
-  list.push({ ch: list.length ? list[list.length-1].ch : 'wider', tag: 'event', note: '' });
+  const p = placementsOf(modalCardId)[n];
+  if (!p) return;
+  const list = p.sub ? p.sub.cards : p.sec.cards;
+  list.splice(list.indexOf(p.e), 1);
   persist();
   renderModal(); refresh();
 }
-function mDelAppr(i) {
+function mAddTo() {
   if (guard()) return;
-  const list = ensureAppr(modalCardId);
-  list.splice(i, 1);
+  const [secId, subId] = document.getElementById('modal-add-target').value.split('/');
+  const t = findTarget(secId, subId || null);
+  if (!t) return;
+  (t.cards ??= []).push({ cardId: modalCardId, note: '' });
   persist();
   renderModal(); refresh();
 }
@@ -1154,9 +1310,9 @@ function closeModal() { document.getElementById('modal').classList.remove('show'
 /* ================= Import / export ================= */
 function exportData() {
   const blob = new Blob([JSON.stringify({
-    site: 'the-hobbit-in-cards', version: 2,
+    site: 'the-hobbit-in-cards', version: 3,
     exported_at: new Date().toISOString(),
-    owned, appearances,
+    owned, story,
   }, null, 2)], {type: 'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1184,12 +1340,9 @@ function importJSON(text) {
   const data = JSON.parse(text);
   if (!data.owned) throw new Error('not a collection backup');
   owned = data.owned;
-  if (data.appearances) appearances = data.appearances;
-  else if (data.chapter_overrides) {  // v1 backup
-    appearances = {};
-    for (const [id, ch] of Object.entries(data.chapter_overrides))
-      appearances[id] = [{ch, tag: 'event', note: ''}];
-  }
+  if (data.story) story = data.story;
+  // v1/v2 backups carried chapter/appearance data for the old prefab tale — the
+  // owned counts import fine; the outline stays as it is.
   persist();
   toast('Backup restored.');
   refresh();
@@ -1241,7 +1394,12 @@ function toast(msg) {
   clearTimeout(t._h);
   t._h = setTimeout(() => t.classList.remove('show'), 2600);
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeAuth(); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal(); closeAuth();
+    if (document.getElementById('picker-modal').classList.contains('show')) closePicker();
+  }
+});
 
 document.body.classList.toggle('readonly', !token);
 setSyncStatus(token ? (dirty ? 'pending' : 'saved') : 'viewonly');

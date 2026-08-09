@@ -8,18 +8,18 @@ Everything lives in one file, `index.html` — inline CSS + vanilla JS, no build
 Two views over the same data:
 
 - **Collection** — the practical ledger: every card in the HOB set, what you own, what's missing.
-- **The Tale** — the point of the project: the 19 chapters of *The Hobbit* (plus a "Wider Tale"
-  bucket), each showing the cards that tell that part of the story.
+- **The Tale** — the point of the project: a user-authored outline of sections and subsections,
+  each holding the cards that tell that part of the story. It starts blank; the owner writes it.
 
 The core idea binding them: a card is one *object* you can own copies of, but it may have many
-**appearances** in the story. Bilbo is in almost every chapter; one copy of a Bilbo card can only
-sit in one sleeve of the final display. So the site counts copies against appearances and tells
+**placements** in the story. Bilbo is in almost every chapter; one copy of a Bilbo card can only
+sit in one sleeve of the final display. So the site counts copies against placements and tells
 you where the story is still "uncovered".
 
 ## 2. Data model
 
 The card database comes from Scryfall at runtime. The collection itself is stored in the
-repo as `collection.json` (same shape as a JSON export: `{owned, appearances}`), read via
+repo as `collection.json` (same shape as a JSON export: `{owned, story}`), read via
 the GitHub contents API by everyone and written — as commits — only by the signed-in owner.
 `localStorage` acts as an instant-write cache and offline buffer:
 
@@ -47,52 +47,55 @@ Everything below is unchanged and still in `localStorage`:
 cards        (cache, key hob_cards_v1, 24h TTL)
   [{ id, name, cn, rarity, type_line, flavor, oracle, img, uri }]
   — trimmed from Scryfall /cards/search?q=set:hob&unique=prints, paginated.
+  — unique=prints means each art/printing is its own entry: the picker exposes them all.
 
 owned        (key hob_owned_v1)
   { [cardId]: { q, f, s } }        // regular, foil ✦, special-art ★ copy counts
   — a card is "owned" if q+f+s > 0; total copies = q+f+s.
 
-appearances  (key hob_appear_v1)
-  { [cardId]: [ { ch, tag, note } ] }
-  — ch:   chapter key ('ch1'…'ch19' | 'wider')
-  — tag:  WHY the card sits at this story point:
-          'character' | 'event' | 'flavor' (flavor text quotes the book)
-          | 'art' (the art shows the moment) | 'auto' (machine-placed)
-  — note: free text, e.g. "finds the ring"
-  — ABSENT key  = card not yet curated → one auto appearance from the heuristics
-  — EMPTY array = deliberately removed from the tale
+story        (key hob_story_v3, synced inside collection.json)
+  { sections: [ { id, title, blurb, cards: [entry], subs: [ {id, title, blurb, cards: [entry]} ] } ] }
+  — entry: { cardId, note }; the same card may be placed any number of times.
+  — ids are opaque (sid()); section numerals (I, II, …) come from array order.
+  — starts empty: the tale is entirely user-authored, no prefab chapters, no heuristics.
 ```
 
 ### Coverage rule
 
-`copies = q + f + s`. A card's appearances are covered in list order: the first `copies`
-appearances render bright; the rest render amber with "needs another copy". Chapter progress
-bars count covered appearances, not owned cards — so the bars measure *the story*, not the binder.
+`copies = q + f + s`. A card's placements are covered in reading order (sections top to
+bottom, section cards before its subsections): the first `copies` placements render bright;
+the rest render amber with "needs another copy" (`coverageFlags()`). Section progress bars
+count covered placements, not owned cards — so the bars measure *the story*, not the binder.
 
 ### Migration
 
-v1 of the site stored a single chapter override per card (`hob_chapters_v1`). On boot, if
-`hob_appear_v1` is missing, legacy overrides are converted to single `event` appearances.
-JSON backups of both versions import cleanly.
+v1/v2 stored prefab-chapter appearances (`hob_appear_v1` / `hob_chapters_v1`). The v3 outline
+ignores them: JSON backups of any version import their `owned` counts; only v3 backups carry
+a `story`.
 
-## 3. Chapter auto-assignment
+## 3. Authoring the tale
 
-`CHAPTERS` is an ordered array; each chapter has a regex tested against
-`name + type_line + flavor + oracle`. First match wins; no match → `wider`.
-The heuristics are a starting point, not an authority — the moment you edit a card's
-appearances in the story modal, they're materialized into `appearances` and the regexes no
-longer apply to that card (`ensureAppr`). Tune the regexes freely; they only affect uncurated cards.
+All owner-only, all guarded by `guard()`:
+
+- `addSection(parentSecId?)` / `renameSection` / `moveSection` / `deleteSection` — outline CRUD
+  via `prompt()`/`confirm()` (works fine on mobile, no extra UI).
+- **Picker** (`openPicker(secId, subId?)`) — modal that live-searches the whole set on
+  name + type_line + flavor text; tap a card to place it in the target section, tap again to
+  remove. Already-placed cards show a ✓ badge; unowned ones render dimmed but are placeable.
+- `removeEntry` — the ✕ under a card in the story view drops that one placement.
 
 ## 4. UI map
 
 - `cardHTML(card, appr?)` — renders one card. With an `appr` argument (story view) it adds the
-  tag pill, the note, and covered/uncovered styling. Quick actions on hover: `+/−` regular,
-  `✦` foil, `★` special art, `story` opens the manager modal.
+  note pill, covered/uncovered styling, and the placement-remove ✕. Quick actions on hover/touch:
+  `+/−` regular, `✦` foil, `★` special art, `story` opens the manager modal.
 - `renderTracker()` — filters (search, rarity, owned/missing) over `cards`.
-- `renderStory()` — explodes cards into appearance entries, groups by chapter, computes coverage.
+- `renderStory()` — walks `story.sections`, computes coverage, renders outline + edit controls
+  (owner) or a clean read-only view (visitors).
 - **Story modal** (`openModal`/`renderModal`) — per card: copy counters (regular/foil/special art),
-  a want-vs-have summary line, and the appearance rows (chapter, reason tag, note, delete, add).
-- `exportData()` / `importJSON()` / `importCSV()` — JSON backup of `{owned, appearances}`;
+  a want-vs-have summary line, and the placement rows (section › subsection, note, remove) plus
+  an "add to section" row.
+- `exportData()` / `importJSON()` / `importCSV()` — JSON backup of `{owned, story}`;
   CSV import understands ManaBox exports (matches on set code + collector number; foil column
   adds to `f`).
 
@@ -118,5 +121,6 @@ cd test && npm install playwright && node run.js
 - **HOC Commander set**: change `SET_CODE`, or add a second tab with its own cache key.
 - **Read-only share mode**: serialize state into the URL hash so a link shows your tale without
   edit controls.
-- **Drag-and-drop** between chapters as an alternative to the modal.
-- **Per-chapter hunt list**: flat "buy these next" view sorted by chapter impact.
+- **Drag-and-drop** of cards between sections, and of sections themselves, as an
+  alternative to the buttons.
+- **Per-section hunt list**: flat "buy these next" view sorted by story impact.

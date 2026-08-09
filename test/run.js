@@ -55,54 +55,79 @@ const mock = require('./mock.js');
   await page.fill('#search', '');
   await page.screenshot({ path: 'test/tracker.png', fullPage: false });
 
-  // Story view
+  // Story view: clean slate, then author an outline
+  const answers = [];
+  page.on('dialog', d => d.type() === 'prompt' ? d.accept(answers.shift() || '') : d.accept());
   await page.click('#nav-story');
+  await page.waitForSelector('.story-empty');
+  console.log('clean slate (expect 1):', await page.locator('.story-empty').count());
+
+  answers.push('An Unexpected Party');
+  await page.click('.story-empty .tool-btn');
   await page.waitForSelector('.chapter');
-  const chapters = await page.locator('.chapter').count();
-  console.log('chapters rendered:', chapters);
-  const gollumCh = await page.locator('.chapter', { hasText: 'Riddles in the Dark' }).locator('.card').count();
-  console.log('cards in Riddles in the Dark:', gollumCh);
+  console.log('section title:', (await page.textContent('.ch-title')).trim());
+  console.log('section numeral (expect I):', (await page.textContent('.ch-num')).trim());
+
+  answers.push('Bag End');
+  await page.locator('.sec-add').first().click();   // "+ Add subsection" on section I
+  await page.waitForSelector('.subsection');
+  console.log('subsection title:', (await page.textContent('.sub-title')).trim());
+
+  // Picker on the section: search by name, then by flavor text
+  await page.locator('.chapter .grid').first().locator('.add-card').click();
+  await page.waitForSelector('#picker-modal.show');
+  await page.fill('#picker-search', 'smaug');
+  console.log('picker name search (expect 1):', await page.locator('#picker-results .pick').count());
+  await page.click('#picker-results .pick');
+  await page.fill('#picker-search', 'pocketses');
+  const flavorHit = page.locator('#picker-results .pick', { hasText: 'Gollum' });
+  console.log('picker flavor search finds Gollum (expect 1):', await flavorHit.count());
+  await flavorHit.click();
+  console.log('picked badge shows ✓ (expect 1):', await page.locator('#picker-results .pick.in').count());
+  await page.click('#picker-modal .auth-actions .tool-btn');   // Done
+  console.log('cards in section (expect 2):',
+    await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count());
+
+  // Second placement of Gollum in the subsection -> 1 copy, 2 placements -> amber
+  await page.locator('.subsection .add-card').click();
+  await page.fill('#picker-search', 'gollum');
+  await page.click('#picker-results .pick');
+  await page.click('#picker-modal .auth-actions .tool-btn');
+  console.log('uncovered placements (expect 1):', await page.locator('#view-story .card.uncovered').count());
   await page.screenshot({ path: 'test/story.png', fullPage: true });
 
-  // Story manager modal: move mock-20's appearance to A Warm Welcome, add a 2nd appearance
-  const storyCard = page.locator('#view-story .card[data-id="mock-20"]');
-  await storyCard.hover();
-  await storyCard.locator('.assign-btn').click({ force: true });
-  await page.selectOption('.appear-row >> nth=0 >> select >> nth=0', 'ch10');
+  // Card modal: placements listed, note editing, removal
+  const gCard = page.locator('#view-story .card[data-id="mock-8"]').first();
+  await gCard.hover();
+  await gCard.locator('.assign-btn').click({ force: true });
+  console.log('modal placements (expect 2):', await page.locator('#modal .place-label').count());
+  await page.fill('#modal .appear-row >> nth=0 >> input', 'what has it got in its pocketses?');
+  await page.locator('#modal .appear-row >> nth=0 >> input').press('Tab');
   await page.waitForTimeout(200);
-  await page.click('.add-appear');
-  await page.selectOption('.appear-row >> nth=1 >> select >> nth=0', 'ch9');
-  await page.selectOption('.appear-row >> nth=1 >> select >> nth=1', 'flavor');
-  await page.fill('.appear-row >> nth=1 >> input', 'sings among the barrels');
-  await page.locator('.appear-row >> nth=1 >> input').press('Tab');
-  await page.waitForTimeout(200);
-  console.log('modal summary:', (await page.textContent('.copy-summary')).trim());
-  // Add one foil copy from modal (1 copy, 2 appearances -> one uncovered)
-  await page.click('.copy-ctl:has-text("Foil") button:has-text("+")');
-  await page.waitForTimeout(200);
+  await page.locator('#modal .appear-row .del').last().click();   // drop the subsection placement
+  console.log('placements after remove (expect 1):', await page.locator('#modal .place-label').count());
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
-  const warmWelcome = await page.locator('.chapter', { hasText: 'A Warm Welcome' }).locator('.card').count();
-  console.log('cards in A Warm Welcome after move (expect 1):', warmWelcome);
-  const barrels = await page.locator('.chapter', { hasText: 'Barrels Out of Bond' }).locator('.card[data-id="mock-20"]').count();
-  console.log('mock-20 also in Barrels chapter (expect 1):', barrels);
-  const uncovered = await page.locator('#view-story .card.uncovered').count();
-  console.log('uncovered appearances (expect 1):', uncovered);
-  const quotePill = await page.locator('.tag-pill.flavor', { hasText: 'sings among the barrels' }).count();
-  console.log('flavor-quote pill with note (expect 1):', quotePill);
+  console.log('note pill rendered (expect 1):',
+    await page.locator('#view-story .tag-pill.note', { hasText: 'pocketses' }).count());
 
   // Sync: wait for the debounced commit of the edits above, then verify payload
   await page.waitForFunction(() =>
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
   const pushed = JSON.parse(Buffer.from(gh.doc.content, 'base64').toString('utf8'));
-  console.log('synced doc owned count (expect 3):', Object.values(pushed.owned).filter(o => o.q + o.f + o.s > 0).length);
-  console.log('synced doc has appearances (expect true):', !!pushed.appearances['mock-20']);
+  console.log('synced doc owned count (expect 2):', Object.values(pushed.owned).filter(o => o.q + o.f + o.s > 0).length);
+  console.log('synced doc has story (expect An Unexpected Party / 2 cards):',
+    pushed.story.sections[0].title, '/', pushed.story.sections[0].cards.length);
   console.log('PUT commits made:', gh.puts > 0);
 
-  // Persistence: reload, check owned survived (now served from the mock repo)
+  // Persistence: reload, check owned + story survived (now served from the mock repo)
   await page.reload();
   await page.waitForSelector('#view-tracker .card');
-  console.log('owned after reload (expect 3):', await page.textContent('#stat-owned'));
+  console.log('owned after reload (expect 2):', await page.textContent('#stat-owned'));
+  await page.click('#nav-story');
+  await page.waitForSelector('.chapter');
+  console.log('story after reload:', (await page.textContent('.ch-title')).trim(), '/',
+    await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count(), 'cards');
 
   // Viewer mode: fresh context without a token -> read-only, but sees the collection
   const viewerCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -113,14 +138,19 @@ const mock = require('./mock.js');
   await viewer.goto('file://' + path.resolve(__dirname, '..', 'index.html'));
   await viewer.waitForSelector('#view-tracker .card');
   await viewer.waitForFunction(() => document.getElementById('stat-owned').textContent !== '0');
-  console.log('viewer sees owned (expect 3):', await viewer.textContent('#stat-owned'));
+  console.log('viewer sees owned (expect 2):', await viewer.textContent('#stat-owned'));
   console.log('viewer is readonly (expect true):', await viewer.evaluate(() => document.body.classList.contains('readonly')));
   console.log('viewer qty-pill hidden (expect true):', await viewer.locator('.card[data-id="mock-8"] .qty-pill').isHidden());
   const putsBefore = gh.puts;
   await viewer.click('.card[data-id="mock-1"]');   // guarded: should not change anything
   await viewer.waitForTimeout(300);
-  console.log('viewer click changed nothing (expect 3 / true):',
+  console.log('viewer click changed nothing (expect 2 / true):',
     await viewer.textContent('#stat-owned'), '/', gh.puts === putsBefore);
+  await viewer.click('#nav-story');
+  await viewer.waitForSelector('.chapter');
+  console.log('viewer sees the tale (expect An Unexpected Party):', (await viewer.textContent('.ch-title')).trim());
+  console.log('viewer has no edit controls (expect 0 / 0):',
+    await viewer.locator('.sec-controls').count(), '/', await viewer.locator('.add-card').count());
   await viewerCtx.close();
 
   await browser.close();

@@ -7,14 +7,15 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
 
 - **Collection view** — all cards of the set (fetched live from Scryfall, always current),
   with search, rarity filters, owned/missing filters, quantity and foil counts.
-- **The Tale view** — the full story in 19 chapters, each showing its cards. Owned cards
-  glow gold; missing ones wait in grey. Cards are auto-sorted into chapters by name, type,
-  and flavor text as a starting point — hover any card and press **story** to curate it yourself.
-- **Appearances** — a card can appear at several points of the story (Bilbo is everywhere!).
-  Each appearance is tagged with *why* it belongs there: character/being, event/scene,
-  flavor text quoting the book, or the art showing the moment — plus a free note.
+- **The Tale view** — a blank page you author yourself. Create sections and subsections
+  (auto-numbered, with optional descriptions), reorder, rename, delete. Fill each part
+  from a card picker that searches the whole set by name, type, or flavor text — every
+  printing is its own card, so showcase and borderless arts are individually pickable.
+- **Placements** — a card can be placed at several points of the story (Bilbo is
+  everywhere!), each with a free note ("finds the ring"). Manage placements from the
+  section (tap to add/remove in the picker) or from the card's **story** dialog.
 - **Copies vs. the tale** — you track regular, foil ✦, and special-art ★ copies per card.
-  If a card has more appearances than you own copies, the uncovered appearances glow amber
+  If a card has more placements than you own copies, the uncovered placements glow amber
   ("needs another copy") — your hunt list for bringing the story to life.
 - **The collection lives in the repo** — every edit is committed to `collection.json`
   via the GitHub API, so it's versioned, backed up, and shared across your devices.
