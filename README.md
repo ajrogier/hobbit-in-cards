@@ -22,12 +22,14 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
 
 ## Deploy on GitHub Pages
 
-1. Create a new repository on GitHub (e.g. `hobbit-in-cards`). Public is required for
-   free Pages hosting.
-2. Upload `index.html` (and this README) — on the repo page: *Add file → Upload files*.
-3. Go to *Settings → Pages*, set **Source** to *Deploy from a branch*, branch `main`,
-   folder `/ (root)`, and save.
-4. After a minute your site is live at `https://<your-username>.github.io/hobbit-in-cards/`.
+Deployment is automatic: the workflow in `.github/workflows/deploy-pages.yml` enables
+GitHub Pages and publishes the site on every push to `main` (the repo must be public
+for free Pages hosting). After the first run the site is live at
+`https://<your-username>.github.io/hobbit-in-cards/`.
+
+You can also trigger it manually from the *Actions* tab (*Deploy to GitHub Pages →
+Run workflow*), or set Pages up by hand under *Settings → Pages* if you prefer
+deploying from a branch.
 
 No build step, no dependencies — it's one HTML file.
 
