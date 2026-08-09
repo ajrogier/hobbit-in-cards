@@ -13,7 +13,8 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   printing is its own card, so showcase and borderless arts are individually pickable.
 - **Placements** — a card can be placed at several points of the story (Bilbo is
   everywhere!), each with a free note ("finds the ring"). Manage placements from the
-  section (tap to add/remove in the picker) or from the card's **story** dialog.
+  section (tap to add/remove in the picker) or from the card dialog (the **⋯** button,
+  or just tapping the card in the Tale view).
 - **Copies vs. the tale** — you track regular, foil ✦, and special-art ★ copies per card.
   If a card has more placements than you own copies, the uncovered placements glow amber
   ("needs another copy") — your hunt list for bringing the story to life.

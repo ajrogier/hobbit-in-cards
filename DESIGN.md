@@ -87,8 +87,11 @@ All owner-only, all guarded by `guard()`:
 ## 4. UI map
 
 - `cardHTML(card, appr?)` — renders one card. With an `appr` argument (story view) it adds the
-  note pill, covered/uncovered styling, and the placement-remove ✕. Quick actions on hover/touch:
-  `+/−` regular, `✦` foil, `★` special art, `story` opens the manager modal.
+  note pill, covered/uncovered styling, and the placement-remove ✕. Two overlay buttons
+  (hover on desktop, always-on and ~44px on touch): `+` adds a regular copy, `⋯` opens the
+  card dialog. Tapping the card toggles owned in the Collection (only between 0 and 1 —
+  with more copies it opens the dialog instead, so a stray tap can't wipe counts), opens
+  the dialog in the Tale, and opens a read-only dialog for visitors.
 - `renderTracker()` — filters (search, rarity, owned/missing) over `cards`.
 - `renderStory()` — walks `story.sections`, computes coverage, renders outline + edit controls
   (owner) or a clean read-only view (visitors).

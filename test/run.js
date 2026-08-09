@@ -97,9 +97,8 @@ const mock = require('./mock.js');
   await page.screenshot({ path: 'test/story.png', fullPage: true });
 
   // Card modal: placements listed, note editing, removal
-  const gCard = page.locator('#view-story .card[data-id="mock-8"]').first();
-  await gCard.hover();
-  await gCard.locator('.assign-btn').click({ force: true });
+  // In the tale, tapping a card opens its dialog (no separate story button)
+  await page.locator('#view-story .card[data-id="mock-8"]').first().click();
   console.log('modal placements (expect 2):', await page.locator('#modal .place-label').count());
   await page.fill('#modal .appear-row >> nth=0 >> input', 'what has it got in its pocketses?');
   await page.locator('#modal .appear-row >> nth=0 >> input').press('Tab');
@@ -129,6 +128,17 @@ const mock = require('./mock.js');
   console.log('story after reload:', (await page.textContent('.ch-title')).trim(), '/',
     await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count(), 'cards');
 
+  // Multi-copy protection: with >1 copies, a card tap opens the dialog instead of wiping counts
+  await page.click('#nav-tracker');
+  await page.locator('.card[data-id="mock-8"] .qty-pill button').first().click();  // + -> 2 copies
+  await page.click('.card[data-id="mock-8"]');
+  console.log('multi-copy tap opens dialog, owned intact (expect true / 2):',
+    await page.locator('#modal.show').isVisible(), '/', await page.textContent('#stat-owned'));
+  await page.locator('#modal .copy-ctl button').first().click();                   // − back to 1
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() =>
+    document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
+
   // Viewer mode: fresh context without a token -> read-only, but sees the collection
   const viewerCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const viewer = await viewerCtx.newPage();
@@ -142,10 +152,13 @@ const mock = require('./mock.js');
   console.log('viewer is readonly (expect true):', await viewer.evaluate(() => document.body.classList.contains('readonly')));
   console.log('viewer qty-pill hidden (expect true):', await viewer.locator('.card[data-id="mock-8"] .qty-pill').isHidden());
   const putsBefore = gh.puts;
-  await viewer.click('.card[data-id="mock-1"]');   // guarded: should not change anything
+  await viewer.click('.card[data-id="mock-1"]');   // opens read-only details, changes nothing
   await viewer.waitForTimeout(300);
+  console.log('viewer tap opens read-only dialog (expect true / 0 counter buttons):',
+    await viewer.locator('#modal.show').isVisible(), '/', await viewer.locator('#modal .copy-ctl button').count());
   console.log('viewer click changed nothing (expect 2 / true):',
     await viewer.textContent('#stat-owned'), '/', gh.puts === putsBefore);
+  await viewer.keyboard.press('Escape');
   await viewer.click('#nav-story');
   await viewer.waitForSelector('.chapter');
   console.log('viewer sees the tale (expect An Unexpected Party):', (await viewer.textContent('.ch-title')).trim());
