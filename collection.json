@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T13:57:17.697Z",
+  "saved_at": "2026-08-10T13:57:22.746Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1481,7 +1481,8 @@
           },
           {
             "cardId": "3ffe34d4-72f4-4562-a948-8909b9321e59",
-            "note": ""
+            "note": "",
+            "fl": true
           },
           {
             "text": "But now they had planned with the goblin's help to come by night upon some of the villages nearest the mountains. If their plan had been carried out, there would have been none left there the next day."
