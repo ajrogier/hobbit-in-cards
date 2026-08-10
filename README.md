@@ -10,7 +10,7 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   shimmer on the card; on desktop the hover pill marks a foil in one click. A **Main set
   #1–193** chip narrows the quest to the numbered main set — special art treatments
   (#194+) are hidden and stop counting toward progress. The goal syncs with the collection.
-- **The Tale view** — a blank page you author yourself. Create sections and subsections
+- **The Tale view** (the landing page) — a blank page you author yourself. Create sections and subsections
   (auto-numbered, with optional descriptions), reorder, rename, delete. Fill each part
   from a card picker that searches the whole set by name, type, or flavor text — every
   printing is its own card, so showcase and borderless arts are individually pickable.
@@ -31,11 +31,6 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   Visitors see the collection read-only; editing requires the owner sign-in (below).
 - **Export** downloads a JSON backup; **Import** restores it — and also accepts a
   **ManaBox CSV export**, so you can scan cards with your phone and import them here.
-- **The Book** — a reader tab beside the tale. Load the book's text once per device
-  (plain .txt with "Chapter …" headings, or a book.json with page numbers): it is stored
-  in that browser only — never committed, synced, or served, because the book is
-  copyrighted and this site is public. Search any line to find its chapter (and page,
-  with a json book); every card dialog gets a "find the flavor line in the book" jump.
 - **Settings (⚙)** — a small menu holding the per-device preferences: day/night theme
   (day is styled after Tolkien's original Hobbit cover — cream sky, ink linework, forest
   greens, red-sun accent), foil shimmer (subtle static wash, or an animated gleam sweep),

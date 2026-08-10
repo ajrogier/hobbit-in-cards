@@ -7,9 +7,10 @@ Everything lives in one file, `index.html` — inline CSS + vanilla JS, no build
 
 Two views over the same data:
 
+- **The Tale** (the landing view) — the point of the project: a user-authored outline of
+  sections and subsections, each holding the cards and passages that tell that part of the
+  story. It starts blank; the owner writes it.
 - **Collection** — the practical ledger: every card in the HOB set, what you own, what's missing.
-- **The Tale** — the point of the project: a user-authored outline of sections and subsections,
-  each holding the cards that tell that part of the story. It starts blank; the owner writes it.
 
 The core idea binding them: a card is one *object* you can own copies of, but it may have many
 **placements** in the story. Bilbo is in almost every chapter; one copy of a Bilbo card can only
@@ -112,15 +113,6 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   "❝ Quote here" inserts the card's flavor text as a passage linked to the card. Passages
   share the entry list, so they reorder, drag, and delete like cards (`placementsIn()`
   filters them out wherever coverage/progress/picker-✓ logic needs placements only).
-
-## 3b. The Book (device-local reader)
-
-`hob_book_v1` in localStorage: `{ chapters: [ { title, paras: [ { t, page? } ] } ] }`.
-Deliberately **not** part of collection.json and never pushed: the text is copyrighted
-and the repo/site are public, so each device imports its own copy (txt parsed by
-"Chapter …" headings; json may carry per-paragraph page numbers). Search normalizes
-curly quotes and whitespace; results jump to the paragraph with a highlight flash.
-`bookFindFlavor(cardId)` probes the first ~48 chars of a card's flavor text.
 
 ## 4. UI map
 

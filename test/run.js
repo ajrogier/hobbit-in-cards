@@ -35,7 +35,10 @@ const mock = require('./mock.js');
   await page.addInitScript(() => localStorage.setItem('hob_token_v1', 'test-token'));
 
   await page.goto('file://' + path.resolve(__dirname, '..', 'index.html'));
-  await page.waitForSelector('#view-tracker .card', { timeout: 10000 });
+  await page.waitForSelector('#view-story .story-empty', { timeout: 10000 });
+  console.log('lands on the tale (expect true):', await page.locator('#nav-story.active').count() === 1);
+  await page.click('#nav-tracker');
+  await page.waitForSelector('#view-tracker .card');
 
   // Stats (mock set: 20 main cards + 1 special art #300)
   console.log('total (expect 23 incl. 2 tokens):', await page.textContent('#stat-total'));
@@ -55,7 +58,7 @@ const mock = require('./mock.js');
     await page.evaluate(() => document.body.classList.contains('sheen-anim')));
   await page.keyboard.press('Escape');
   await page.reload();
-  await page.waitForSelector('#view-tracker .card');
+  await page.waitForSelector('#view-story .story-empty');
   console.log('prefs after reload (expect true / true):',
     await page.evaluate(() => document.body.classList.contains('light')), '/',
     await page.evaluate(() => document.body.classList.contains('sheen-anim')));
@@ -64,6 +67,8 @@ const mock = require('./mock.js');
   await page.click('#sheen-subtle');
   console.log('back to subtle (expect false):', await page.evaluate(() => document.body.classList.contains('sheen-anim')));
   await page.keyboard.press('Escape');
+  await page.click('#nav-tracker');
+  await page.waitForSelector('#view-tracker .card');
 
   // Quick foil from the card pill; sheen + badge should appear
   await page.locator('.card[data-id="mock-14"] .qty-pill .foil').click();
@@ -207,28 +212,6 @@ const mock = require('./mock.js');
     await page.locator('.subsection .grid .card[data-id="mock-14"]').count(), '/',
     await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count());
 
-  // The Book: device-local reader — import a txt, chapters parsed, search finds chapter
-  await page.click('#nav-book');
-  console.log('book starts empty (expect true):', await page.locator('#book-empty').isVisible());
-  await page.setInputFiles('#book-file', path.resolve(__dirname, 'book.txt'));
-  await page.waitForSelector('#book-ui', { state: 'visible' });
-  console.log('book chapters parsed (expect 2):', await page.locator('#book-chnav option').count());
-  await page.fill('#book-search', 'pocketses');
-  console.log('book search hits (expect 1, in Chapter V):',
-    await page.locator('.book-hit').count(), '/',
-    (await page.locator('.book-hit .where').textContent()).trim());
-  await page.locator('.book-hit').click();
-  console.log('jump shows chapter (expect Chapter V):', (await page.textContent('#book-text h2')).trim());
-  await page.fill('#book-search', 'kili');   // plain letters must find Kíli
-  console.log('book folds diacritics (expect 1):', await page.locator('.book-hit').count());
-
-  // From a card's dialog straight to its flavor line in the book
-  await page.click('#nav-tracker');
-  await page.locator('#tracker-grid .card[data-id="mock-8"] .qty-pill .more').click();
-  await page.locator('#modal button', { hasText: 'Find the flavor line' }).click();
-  console.log('flavor jump lands in book with hits (expect true / 1):',
-    await page.locator('#view-book').isVisible(), '/', await page.locator('.book-hit').count());
-  
   // Sync: wait for the debounced commit of the edits above, then verify payload
   await page.waitForFunction(() =>
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
@@ -240,16 +223,15 @@ const mock = require('./mock.js');
     secList.filter(e => e.text !== undefined).length, '/',
     pushed.story.sections[0].subs[0].cards.length);
   console.log('PUT commits made:', gh.puts > 0);
-  console.log('book never synced to repo (expect true):', !('book' in pushed) && !JSON.stringify(pushed).includes('oozy smell'));
 
   // Persistence: reload, check owned + story survived (now served from the mock repo)
   await page.reload();
-  await page.waitForSelector('#view-tracker .card');
-  console.log('owned after reload (expect 2):', await page.textContent('#stat-owned'));
-  await page.click('#nav-story');
-  await page.waitForSelector('.chapter');
+  await page.waitForSelector('.chapter');   // lands straight on the written tale
   console.log('story after reload (expect 1 card):', (await page.textContent('.ch-title')).trim(), '/',
     await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count(), 'cards');
+  await page.click('#nav-tracker');
+  await page.waitForSelector('#view-tracker .card');
+  console.log('owned after reload (expect 2):', await page.textContent('#stat-owned'));
 
   // Multi-copy protection: with >1 copies, a card tap opens the dialog instead of wiping counts
   await page.click('#nav-tracker');
@@ -268,11 +250,14 @@ const mock = require('./mock.js');
   await viewer.route('**/api.scryfall.com/**', scryfallRoute);
   await viewer.route('**/api.github.com/**', ghRoute);
   await viewer.goto('file://' + path.resolve(__dirname, '..', 'index.html'));
+  await viewer.waitForSelector('.chapter');   // viewers land on the tale
+  console.log('viewer lands on the tale (expect true):', await viewer.locator('#nav-story.active').count() === 1);
+  await viewer.click('#nav-tracker');
   await viewer.waitForSelector('#view-tracker .card');
   await viewer.waitForFunction(() => document.getElementById('stat-owned').textContent !== '0');
   console.log('viewer sees owned (expect 2):', await viewer.textContent('#stat-owned'));
   console.log('viewer is readonly (expect true):', await viewer.evaluate(() => document.body.classList.contains('readonly')));
-  console.log('viewer qty-pill hidden (expect true):', await viewer.locator('.card[data-id="mock-8"] .qty-pill').isHidden());
+  console.log('viewer qty-pill hidden (expect true):', await viewer.locator('#tracker-grid .card[data-id="mock-8"] .qty-pill').isHidden());
   const putsBefore = gh.puts;
   await viewer.click('.card[data-id="mock-1"]');   // opens read-only details, changes nothing
   await viewer.waitForTimeout(300);
