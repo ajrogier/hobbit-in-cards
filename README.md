@@ -6,7 +6,10 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
 ## What it does
 
 - **Collection view** — all cards of the set (fetched live from Scryfall, always current),
-  with search, rarity filters, owned/missing filters, quantity and foil counts.
+  with search, rarity filters, owned/missing filters, quantity and foil counts. Foil copies
+  shimmer on the card; on desktop the hover pill marks a foil in one click. A **Main set
+  #1–193** chip narrows the quest to the numbered main set — special art treatments
+  (#194+) are hidden and stop counting toward progress. The goal syncs with the collection.
 - **The Tale view** — a blank page you author yourself. Create sections and subsections
   (auto-numbered, with optional descriptions), reorder, rename, delete. Fill each part
   from a card picker that searches the whole set by name, type, or flavor text — every
@@ -15,9 +18,10 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   everywhere!), each with a free note ("finds the ring"). Manage placements from the
   section (tap to add/remove in the picker) or from the card dialog (the **⋯** button,
   or just tapping the card in the Tale view).
-- **Copies vs. the tale** — you track regular, foil ✦, and special-art ★ copies per card.
-  If a card has more placements than you own copies, the uncovered placements glow amber
-  ("needs another copy") — your hunt list for bringing the story to life.
+- **Copies vs. the tale** — you track regular and foil ✦ copies per card (special arts are
+  their own card entries, so they need no separate counter). If a card has more placements
+  than you own copies, the uncovered placements glow amber ("needs another copy") — your
+  hunt list for bringing the story to life.
 - **The collection lives in the repo** — every edit is committed to `collection.json`
   via the GitHub API, so it's versioned, backed up, and shared across your devices.
   Visitors see the collection read-only; editing requires the owner sign-in (below).

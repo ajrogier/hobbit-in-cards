@@ -50,8 +50,15 @@ cards        (cache, key hob_cards_v1, 24h TTL)
   — unique=prints means each art/printing is its own entry: the picker exposes them all.
 
 owned        (key hob_owned_v1)
-  { [cardId]: { q, f, s } }        // regular, foil ✦, special-art ★ copy counts
+  { [cardId]: { q, f, s } }        // regular, foil ✦ copy counts
   — a card is "owned" if q+f+s > 0; total copies = q+f+s.
+  — s (special art ★) is legacy: printings are separate card entries (unique=prints),
+    so the UI no longer offers it; existing s counts still display and count.
+
+settings     (key hob_settings_v1, synced inside collection.json)
+  { mainOnly }  — collecting goal: true narrows the Collection view, quest progress
+  and rarity counts to collector numbers 1..MAIN_SET_MAX (193); special art
+  treatments (#194+) are hidden and uncounted. The tale picker always shows all prints.
 
 story        (key hob_story_v3, synced inside collection.json)
   { sections: [ { id, title, blurb, cards: [entry], subs: [ {id, title, blurb, cards: [entry]} ] } ] }

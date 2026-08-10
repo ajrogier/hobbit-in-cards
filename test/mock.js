@@ -20,6 +20,8 @@ const names = [
   ['18','My Precious','uncommon','Enchantment — Aura',''],
   ['19','Last Light of Durin\'s Day','rare','Enchantment','The thrush knocked.'],
   ['20','Silvan Reveler','common','Creature — Elf Citizen',''],
+  // special art treatment: same name, collector number beyond the main set
+  ['300','Bilbo, Fellow Conspirator','rare','Legendary Creature — Halfling Rogue','"I am a burglar, apparently."'],
 ];
 const data = names.map(([cn, name, rarity, type_line, flavor]) => ({
   id: 'mock-' + cn,

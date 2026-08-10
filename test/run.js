@@ -35,18 +35,30 @@ const mock = require('./mock.js');
   await page.goto('file://' + path.resolve(__dirname, '..', 'index.html'));
   await page.waitForSelector('#view-tracker .card', { timeout: 10000 });
 
-  // Stats
-  console.log('total:', await page.textContent('#stat-total'));
+  // Stats (mock set: 20 main cards + 1 special art #300)
+  console.log('total (expect 21):', await page.textContent('#stat-total'));
 
   // Toggle two cards owned
   await page.click('.card[data-id="mock-8"]');   // Gollum
   await page.click('.card[data-id="mock-14"]');  // Smaug
   console.log('owned after toggles:', await page.textContent('#stat-owned'));
 
+  // Quick foil from the card pill; sheen + badge should appear
+  await page.locator('.card[data-id="mock-14"] .qty-pill .foil').click();
+  console.log('foil sheen shown (expect 1):', await page.locator('.card[data-id="mock-14"] .foil-sheen').count());
+  console.log('foil badge (expect ✦1):', (await page.textContent('.card[data-id="mock-14"] .owned-badge')).trim());
+
+  // Main-set-only goal: hides #300 and shrinks the quest total
+  await page.click('#chip-main');
+  console.log('main-set total (expect 20):', await page.textContent('#stat-total'));
+  console.log('special hidden (expect 0):', await page.locator('.card[data-id="mock-300"]').count());
+  await page.click('#chip-main');
+  console.log('full total again (expect 21):', await page.textContent('#stat-total'));
+
   // Filter: missing only should exclude owned
   await page.click('#chip-missing');
   const missingCount = await page.locator('#tracker-grid .card').count();
-  console.log('missing-only count (expect 18):', missingCount);
+  console.log('missing-only count (expect 19):', missingCount);
   await page.click('#chip-missing');
 
   // Search

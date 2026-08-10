@@ -261,6 +261,19 @@
   }
   .qty-pill .more { color: var(--parchment-dim); border-color: var(--border); letter-spacing: 1px; }
   .qty-pill .more:hover { color: var(--gold-bright); border-color: var(--border-gold); }
+  .qty-pill .foil { color: #9ecfdd; border-color: #3d5560; }
+  .qty-pill .foil:hover { border-color: #9ecfdd; }
+  /* Foil copies shimmer on the card itself */
+  .foil-sheen {
+    position: absolute; top: 0; left: 0; width: 100%;
+    aspect-ratio: 488/680; border-radius: 4.75% / 3.5%;
+    background: linear-gradient(115deg,
+      rgba(158,207,221,.28), rgba(216,167,224,.16) 30%,
+      rgba(201,162,75,.20) 55%, rgba(158,221,180,.18) 78%, rgba(158,207,221,.26));
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+  .card.foiled img, .card.foiled .noimg { box-shadow: 0 0 0 2px #9ecfdd, 0 6px 18px rgba(158,207,221,.3); }
   .owned-badge {
     position: absolute; top: 6px; left: 6px;
     padding: 2px 8px;
@@ -425,6 +438,7 @@
   @media (hover: none) {
     .qty-pill { opacity: 1; }
     .qty-pill button { width: 42px; height: 42px; font-size: 22px; }
+    .qty-pill .foil { display: none; }   /* touch stays two-button; foil lives in the dialog */
     .entry-del { width: 30px; height: 30px; font-size: 13px; }
     .sec-controls button { width: 36px; height: 36px; font-size: 16px; }
     .copy-ctl button { width: 38px; height: 38px; font-size: 18px; }
@@ -556,6 +570,7 @@
       <button class="chip" data-r="mythic" onclick="toggleRarity(this)">Mythic <span class="cnt"></span></button>
       <button class="chip" id="chip-missing" onclick="toggleMissing(this)">Missing only</button>
       <button class="chip" id="chip-owned" onclick="toggleOwned(this)">Owned only</button>
+      <button class="chip" id="chip-main" onclick="toggleMainOnly(this)" title="Collect only the numbered main set — special art treatments (#194+) are hidden and don't count toward the quest">Main set #1–193</button>
     </div>
     <div class="grid" id="tracker-grid"></div>
   </section>
@@ -621,6 +636,8 @@ const CACHE_KEY = 'hob_cards_v1';
 const CACHE_HOURS = 24;
 const OWNED_KEY = 'hob_owned_v1';
 const STORY_KEY = 'hob_story_v3';
+const SETTINGS_KEY = 'hob_settings_v1';
+const MAIN_SET_MAX = 193;   // collector numbers above this are special art treatments
 
 /* The collection itself lives in the repo as collection.json — the site reads it for
    everyone, and writes it (as commits) only when the owner has signed in with a token. */
@@ -641,6 +658,8 @@ let owned = load(OWNED_KEY, {});      // id -> {q: regular qty, f: foil qty, s: 
    entry: { cardId, note } — the same card (or different printings of it) may be
    placed at any number of points; copies owned cover entries in reading order. */
 let story = load(STORY_KEY, { sections: [] });
+/* Collecting goal — mainOnly: chase only the numbered main set (#1–193), or every printing. */
+let settings = load(SETTINGS_KEY, { mainOnly: false });
 let view = 'tracker';
 let rarityFilter = new Set();
 let missingOnly = false, ownedOnly = false;
@@ -780,6 +799,7 @@ function guard() {
 function persist() {
   save(OWNED_KEY, owned);
   save(STORY_KEY, story);
+  save(SETTINGS_KEY, settings);
   if (token) {
     dirty = true; save(DIRTY_KEY, true);
     setSyncStatus('pending');
@@ -806,7 +826,8 @@ async function loadCollection() {
     const data = JSON.parse(unb64(j.content));
     owned = data.owned || {};
     story = data.story || { sections: [] };
-    save(OWNED_KEY, owned); save(STORY_KEY, story);
+    if (data.settings) settings = data.settings;
+    save(OWNED_KEY, owned); save(STORY_KEY, story); save(SETTINGS_KEY, settings);
     setSyncStatus(token ? 'saved' : 'viewonly');
     refresh();
   } catch (e) {
@@ -825,7 +846,7 @@ async function pushCollection(isRetry) {
       content: b64(JSON.stringify({
         site: 'the-hobbit-in-cards', version: 3,
         saved_at: new Date().toISOString(),
-        owned, story,
+        owned, story, settings,
       }, null, 2)),
     };
     if (remoteSha) body.sha = remoteSha;
@@ -923,16 +944,22 @@ function signOut() {
 
 /* ================= Stats ================= */
 function isOwned(id) { return copiesOf(id) > 0; }
+function isMainSet(c) { return (parseInt(c.cn) || 0) <= MAIN_SET_MAX; }
+/* The cards the quest is about: the whole set, or just the numbered main set. */
+function collectible() { return settings.mainOnly ? cards.filter(isMainSet) : cards; }
 function updateStats() {
-  const total = cards.length;
-  const got = cards.filter(c => isOwned(c.id)).length;
+  const pool = collectible();
+  const total = pool.length;
+  const got = pool.filter(c => isOwned(c.id)).length;
   const pct = total ? Math.round(got/total*100) : 0;
   document.getElementById('stat-owned').textContent = got;
+  document.getElementById('stat-total').textContent = total || '—';
   document.getElementById('stat-pct').textContent = pct + '%';
   document.getElementById('main-progress').style.width = pct + '%';
+  document.getElementById('chip-main').classList.toggle('on', !!settings.mainOnly);
   for (const chip of document.querySelectorAll('.chip[data-r]')) {
     const r = chip.dataset.r;
-    const rc = cards.filter(c => c.rarity === r);
+    const rc = pool.filter(c => c.rarity === r);
     chip.querySelector('.cnt').textContent = rc.length ? `${rc.filter(c=>isOwned(c.id)).length}/${rc.length}` : '';
   }
 }
@@ -968,12 +995,14 @@ function cardHTML(c, appr) {
   const tapHint = !canEdit() ? 'tap for details'
     : appr ? 'tap for copies, notes & placements'
     : 'tap to mark owned · + adds a copy · ⋯ for foils & the tale';
-  return `<div class="card ${cls}" data-id="${c.id}" onclick="${tapAction}" title="${esc(c.name)} — ${tapHint}">
+  return `<div class="card ${cls}${(o.f||0) > 0 ? ' foiled' : ''}" data-id="${c.id}" onclick="${tapAction}" title="${esc(c.name)} — ${tapHint}">
     ${img}
+    ${(o.f||0) > 0 ? '<span class="foil-sheen"></span>' : ''}
     <span class="owned-badge">${qtyLabel || '✓'}</span>
     <span class="qty-pill">
       <button onclick="event.stopPropagation();bump('${c.id}','q',1)" title="Add a copy">+</button>
-      <button class="more" onclick="event.stopPropagation();openModal('${c.id}')" title="Copies, foils, special arts & the tale">⋯</button>
+      <button class="foil" onclick="event.stopPropagation();bump('${c.id}','f',1)" title="Add a foil copy">✦</button>
+      <button class="more" onclick="event.stopPropagation();openModal('${c.id}')" title="Copies, foils & the tale">⋯</button>
     </span>
     <div class="meta">
       <span class="cname"><span class="rdot ${c.rarity}"></span>${esc(c.name)}</span>
@@ -985,7 +1014,7 @@ function cardHTML(c, appr) {
 
 function renderTracker() {
   const q = document.getElementById('search').value.trim().toLowerCase();
-  let list = cards;
+  let list = collectible();
   if (rarityFilter.size) list = list.filter(c => rarityFilter.has(c.rarity));
   if (missingOnly) list = list.filter(c => !isOwned(c.id));
   if (ownedOnly) list = list.filter(c => isOwned(c.id));
@@ -1203,6 +1232,12 @@ function toggleOwned(el) {
   el.classList.toggle('on', ownedOnly);
   renderTracker();
 }
+function toggleMainOnly(el) {
+  settings.mainOnly = !settings.mainOnly;
+  if (canEdit()) persist();               // the collecting goal syncs with the collection
+  else save(SETTINGS_KEY, settings);      // visitors just filter their own view
+  refresh();
+}
 
 /* ================= Card story manager modal ================= */
 function openModal(id) {
@@ -1259,7 +1294,7 @@ function renderModal() {
     <div class="copies-row">
       ${ctl('q', 'Regular')}
       ${ctl('f', '<span class="foil-star">✦</span> Foil')}
-      ${ctl('s', '<span class="star-special">★</span> Special art')}
+      ${(o.s||0) > 0 ? ctl('s', '<span class="star-special">★</span> Special art') : ''}
     </div>
     <div class="copy-summary ${places.length && copies < places.length ? 'short' : ''}">${summary}</div>
     <h4>In the tale</h4>
@@ -1307,7 +1342,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify({
     site: 'the-hobbit-in-cards', version: 3,
     exported_at: new Date().toISOString(),
-    owned, story,
+    owned, story, settings,
   }, null, 2)], {type: 'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1336,6 +1371,7 @@ function importJSON(text) {
   if (!data.owned) throw new Error('not a collection backup');
   owned = data.owned;
   if (data.story) story = data.story;
+  if (data.settings) settings = data.settings;
   // v1/v2 backups carried chapter/appearance data for the old prefab tale — the
   // owned counts import fine; the outline stays as it is.
   persist();
