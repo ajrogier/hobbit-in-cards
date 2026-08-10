@@ -18,6 +18,10 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   everywhere!), each with a free note ("finds the ring"). Manage placements from the
   section (tap to add/remove in the picker) or from the card dialog (the **⋯** button,
   or just tapping the card in the Tale view).
+- **Passages** — story text between the cards: free narration via the ❝ tile, or one tap
+  in a card's dialog quotes its flavor text into the tale, attributed and showing a small
+  copy of the card — without counting as a placement, so quoting Ori's line doesn't
+  demand a second Ori.
 - **Copies vs. the tale** — you track regular and foil ✦ copies per card (special arts are
   their own card entries, so they need no separate counter). If a card has more placements
   than you own copies, the uncovered placements glow amber ("needs another copy") — your

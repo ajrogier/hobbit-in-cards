@@ -65,7 +65,13 @@ settings     (key hob_settings_v1, synced inside collection.json)
 
 story        (key hob_story_v3, synced inside collection.json)
   { sections: [ { id, title, blurb, cards: [entry], subs: [ {id, title, blurb, cards: [entry]} ] } ] }
-  — entry: { cardId, note }; the same card may be placed any number of times.
+  — entry is one of two kinds, discriminated by the presence of .text:
+      placement { cardId, note }   — a card in the display; consumes copies for coverage
+      passage   { text, cardId? }  — story prose between the cards, full-width, quote-styled;
+                                     optional cardId shows attribution + a mini card, but
+                                     passages NEVER consume copies or count in progress
+                                     (a quoted flavor line must not demand a second copy).
+  — the same card may be placed any number of times.
   — ids are opaque (sid()); section numerals (I, II, …) come from array order.
   — starts empty: the tale is entirely user-authored, no prefab chapters, no heuristics.
 ```
@@ -102,6 +108,10 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   image-drag eats the pointer stream). On touch, the ⠿ handle (touch-action: none) drags
   immediately; the card body needs a ~300ms hold, which real fingers often lose to scroll.
 - `removeEntry` — the ✕ under a card drops that one placement.
+- **Passages** — the ❝ Add-text tile inserts free narration (prompt); the card dialog's
+  "❝ Quote here" inserts the card's flavor text as a passage linked to the card. Passages
+  share the entry list, so they reorder, drag, and delete like cards (`placementsIn()`
+  filters them out wherever coverage/progress/picker-✓ logic needs placements only).
 
 ## 3b. The Book (device-local reader)
 

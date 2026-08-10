@@ -552,6 +552,26 @@
   /* Read mode is the book: no ledger chrome on the cards */
   #view-story.story-reading .owned-badge, #view-story.story-reading .qty-pill { display: none; }
   .card[data-sec] { cursor: grab; }
+  .passage {
+    grid-column: 1 / -1;
+    display: flex; gap: 16px; align-items: center;
+    padding: 14px 18px; margin: 2px 0;
+    border-left: 2px solid var(--border-gold);
+    background: rgba(201,162,75,.06);
+    border-radius: 0 8px 8px 0;
+  }
+  .passage blockquote {
+    flex: 1; margin: 0;
+    font-style: italic; font-size: 17.5px; line-height: 1.65;
+    color: var(--parchment);
+  }
+  .passage blockquote::before { content: '❝ '; color: var(--gold); }
+  .passage .p-attr { font-size: 13.5px; color: var(--parchment-dim); margin-top: 7px; text-align: right; }
+  .passage .p-card { width: 92px; flex-shrink: 0; cursor: pointer; }
+  .passage .p-card img { width: 100%; border-radius: 4.75% / 3.5%; display: block; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
+  .passage .p-ctl { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+  .passage[data-sec] { cursor: grab; }
+  #view-story.story-reading .passage { padding-left: 18px; }
   .drag-handle {
     display: inline-flex; align-items: center; justify-content: center;
     width: 30px; height: 24px; border-radius: 6px;
@@ -867,11 +887,14 @@ function findTarget(secId, subId) {
 /* Walk every entry in reading order: cb(entry, sec, sub|null, indexInList) */
 function forEachEntry(cb) {
   for (const sec of story.sections) {
-    (sec.cards || []).forEach((e, i) => cb(e, sec, null, i));
+    (sec.cards || []).forEach((e, i) => { if (e.text === undefined) cb(e, sec, null, i); });
     for (const sub of (sec.subs || []))
-      (sub.cards || []).forEach((e, i) => cb(e, sec, sub, i));
+      (sub.cards || []).forEach((e, i) => { if (e.text === undefined) cb(e, sec, sub, i); });
   }
 }
+/* Card placements only — passages ({text, cardId?}) are story narration and
+   never consume copies or count toward coverage. */
+function placementsIn(list) { return (list || []).filter(e => e.text === undefined); }
 /* Copies cover a card's entries in reading order; returns Map(entry -> covered) */
 function coverageFlags() {
   const seen = {}, flags = new Map();
@@ -1243,20 +1266,25 @@ function renderStory() {
   const byId = Object.fromEntries(cards.map(c => [c.id, c]));
   const flags = coverageFlags();
   const grid = (list, secId, subId) => {
-    const cardsHTML = (list || [])
+    const entriesHTML = (list || [])
       .map((e, i) => {
+        const loc = editing ? { sec: secId, sub: subId, i, len: (list || []).length } : null;
+        if (e.text !== undefined) return passageHTML(e, byId, loc);
         const c = byId[e.cardId];
         if (!c) return '';
-        return cardHTML(c, { note: e.note, covered: flags.get(e),
-          loc: editing ? { sec: secId, sub: subId, i, len: (list || []).length } : null });
+        return cardHTML(c, { note: e.note, covered: flags.get(e), loc });
       }).join('');
     const add = editing ? `<div class="card add-card" onclick="openPicker('${secId}','${subId || ''}')" title="Add cards from the set">
         <div class="noimg add-tile"><span class="add-plus">+</span><span>Add cards</span></div>
+      </div>
+      <div class="card add-card" onclick="addPassage('${secId}','${subId || ''}')" title="Add a passage of story text — narration or a quote">
+        <div class="noimg add-tile"><span class="add-plus">❝</span><span>Add text</span></div>
       </div>` : '';
-    return `<div class="grid" data-sec="${secId}" data-sub="${subId || ''}">${cardsHTML}${add}</div>`
+    return `<div class="grid" data-sec="${secId}" data-sub="${subId || ''}">${entriesHTML}${add}</div>`
       + (!(list || []).length && !editing ? `<p class="empty-ch">Nothing placed here yet.</p>` : '');
   };
-  const progress = list => {
+  const progress = rawList => {
+    const list = placementsIn(rawList);
     if (!list.length) return '';
     const got = list.filter(e => flags.get(e)).length;
     const pct = Math.round(got / list.length * 100);
@@ -1353,6 +1381,43 @@ function deleteSection(secId, subId) {
   }
   persist(); renderStory();
 }
+/* ---- Passages: story text between the cards ---- */
+function passageHTML(e, byId, loc) {
+  const c = e.cardId ? byId[e.cardId] : null;
+  const locAttrs = loc ? ` data-sec="${loc.sec}" data-sub="${loc.sub || ''}" data-i="${loc.i}"` : '';
+  const ctl = loc ? `<span class="p-ctl">
+      <span class="drag-handle" title="Drag to move this passage">⠿</span>
+      <button class="entry-move" onclick="editPassage('${loc.sec}','${loc.sub || ''}',${loc.i})" title="Edit the text">✎</button>
+      <button class="entry-move" onclick="moveEntry('${loc.sec}','${loc.sub || ''}',${loc.i},-1)" title="Move earlier" ${loc.i === 0 ? 'disabled' : ''}>‹</button>
+      <button class="entry-move" onclick="moveEntry('${loc.sec}','${loc.sub || ''}',${loc.i},1)" title="Move later" ${loc.i >= loc.len - 1 ? 'disabled' : ''}>›</button>
+      <button class="entry-del" onclick="removeEntry('${loc.sec}','${loc.sub || ''}',${loc.i})" title="Remove this passage">✕</button>
+    </span>` : '';
+  return `<div class="passage"${locAttrs}>
+    ${ctl}
+    <blockquote>${esc(e.text)}${c ? `<div class="p-attr">— ${esc(c.name)}</div>` : ''}</blockquote>
+    ${c && c.img ? `<div class="p-card" onclick="openModal('${c.id}')" title="${esc(c.name)}"><img draggable="false" loading="lazy" src="${c.img}" alt="${esc(c.name)}"></div>` : ''}
+  </div>`;
+}
+function addPassage(secId, subId) {
+  if (guard()) return;
+  const text = (prompt('Story text — a line of narration, or a quote from the book:') || '').trim();
+  if (!text) return;
+  const t = findTarget(secId, subId || null);
+  if (!t) return;
+  (t.cards ??= []).push({ text });
+  persist(); renderStory();
+}
+function editPassage(secId, subId, i) {
+  if (guard()) return;
+  const t = findTarget(secId, subId || null);
+  const e = t && t.cards[i];
+  if (!e || e.text === undefined) return;
+  const text = prompt('Story text:', e.text);
+  if (text === null || !text.trim()) return;
+  e.text = text.trim();
+  persist(); renderStory();
+}
+
 function moveEntry(secId, subId, i, d) {
   if (guard()) return;
   const t = findTarget(secId, subId || null);
@@ -1370,7 +1435,7 @@ function dragStart(e) {
   if (!storyEdit || !canEdit() || drag) return;
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   if (e.target.closest('button, select, input, a')) return;
-  const card = e.target.closest('.card[data-sec]');
+  const card = e.target.closest('[data-sec][data-i]');
   if (!card) return;
   const onHandle = !!e.target.closest('.drag-handle');
   drag = { card, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY,
@@ -1414,7 +1479,7 @@ function dragMove(e) {
   const under = document.elementFromPoint(e.clientX, e.clientY);
   drag.ghost.style.display = '';
   if (!under) return;
-  const overCard = under.closest('.card[data-sec]');
+  const overCard = under.closest('[data-sec][data-i]');
   if (overCard && overCard !== drag.card) {
     const r = overCard.getBoundingClientRect();
     overCard.parentElement.insertBefore(drag.card, e.clientX < r.left + r.width / 2 ? overCard : overCard.nextSibling);
@@ -1437,7 +1502,7 @@ function dragEnd() {
     if (grid && fromList && fromList[fromI]) {
       const to = findTarget(grid.dataset.sec, grid.dataset.sub || null);
       const toList = (to.cards ??= []);
-      const domIndex = [...grid.querySelectorAll('.card[data-sec]')].indexOf(drag.card);
+      const domIndex = [...grid.querySelectorAll('[data-sec][data-i]')].indexOf(drag.card);
       if (!(toList === fromList && domIndex === fromI)) {
         const [entry] = fromList.splice(fromI, 1);
         toList.splice(domIndex, 0, entry);
@@ -1487,7 +1552,7 @@ function renderPicker() {
   if (!t) return;
   const q = fold(document.getElementById('picker-search').value.trim());
   const inHere = {};
-  (t.cards || []).forEach(e => { inHere[e.cardId] = (inHere[e.cardId] || 0) + 1; });
+  placementsIn(t.cards).forEach(e => { inHere[e.cardId] = (inHere[e.cardId] || 0) + 1; });
   let list = cards;
   if (q) list = list.filter(c =>
     fold(c.name).includes(q) ||
@@ -1617,6 +1682,12 @@ function renderModal() {
     <h4>In the tale</h4>
     ${placeRows || (canEdit() ? '' : '<p class="empty-ch">Not placed in the tale.</p>')}
     ${addRow}
+    ${canEdit() && c.flavor && targets.length ? `
+    <h4>Quote the flavor text</h4>
+    <div class="appear-row">
+      <select id="modal-quote-target">${targets.map(t => `<option value="${t.key}">${esc(t.label)}</option>`).join('')}</select>
+      <button class="tool-btn" onclick="mQuoteFlavor()" title="Insert this card's flavor text as a story passage — shows the card, needs no extra copy">❝ Quote here</button>
+    </div>` : ''}
   `;
 }
 function mBump(kind, d) {
@@ -1642,6 +1713,18 @@ function mRemove(n) {
   list.splice(list.indexOf(p.e), 1);
   persist();
   renderModal(); refresh();
+}
+function mQuoteFlavor() {
+  if (guard()) return;
+  const c = cards.find(x => x.id === modalCardId);
+  if (!c || !c.flavor) return;
+  const [secId, subId] = document.getElementById('modal-quote-target').value.split('/');
+  const t = findTarget(secId, subId || null);
+  if (!t) return;
+  (t.cards ??= []).push({ text: c.flavor, cardId: c.id });
+  persist();
+  toast('The line takes its place in the tale — no extra copy needed.');
+  refresh();
 }
 function mAddTo() {
   if (guard()) return;

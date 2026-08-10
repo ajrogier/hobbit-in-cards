@@ -111,7 +111,7 @@ const mock = require('./mock.js');
   console.log('subsection title:', (await page.textContent('.sub-title')).trim());
 
   // Picker on the section: search by name, then by flavor text
-  await page.locator('.chapter .grid').first().locator('.add-card').click();
+  await page.locator('.chapter .grid').first().locator('.add-card', { hasText: 'Add cards' }).click();
   await page.waitForSelector('#picker-modal.show');
   await page.fill('#picker-search', 'smaug');
   console.log('picker name search (expect 1):', await page.locator('#picker-results .pick').count());
@@ -133,7 +133,7 @@ const mock = require('./mock.js');
     await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move').first().isDisabled());
 
   // Second placement of Gollum in the subsection -> 1 copy, 2 placements -> amber
-  await page.locator('.subsection .add-card').click();
+  await page.locator('.subsection .add-card', { hasText: 'Add cards' }).click();
   await page.fill('#picker-search', 'gollum');
   await page.click('#picker-results .pick');
   await page.click('#picker-modal .auth-actions .tool-btn');
@@ -154,6 +154,33 @@ const mock = require('./mock.js');
   console.log('note pill rendered (expect 1):',
     await page.locator('#view-story .tag-pill.note', { hasText: 'pocketses' }).count());
 
+  // Passages: quote a card's flavor into the tale as story text (no placement cost)
+  await page.locator('#view-story .card[data-id="mock-8"]').first().click();   // Gollum dialog
+  const placementsBefore = await page.locator('#modal .place-label').count();
+  await page.selectOption('#modal-quote-target', { index: 0 });                // section I
+  await page.locator('#modal button', { hasText: 'Quote here' }).click();
+  console.log('quote adds no placement (expect ' + placementsBefore + '):',
+    await page.locator('#modal .place-label').count());
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
+  console.log('quoted passage rendered (expect 1):',
+    await page.locator('#view-story .passage', { hasText: 'pocketses' }).count());
+  console.log('passage attributed to Gollum (expect 1):',
+    await page.locator('#view-story .passage .p-attr', { hasText: 'Gollum' }).count());
+  console.log('quote consumes no copies — uncovered stays 0 (expect 0):',
+    await page.locator('#view-story .card.uncovered').count());
+
+  // Free-text passage via the ❝ tile, then edit-mode removal
+  answers.push('And so the company gathered, thirteen dwarves and a burglar.');
+  await page.locator('.chapter .add-card', { hasText: 'Add text' }).first().click();
+  await page.waitForTimeout(200);
+  console.log('free passage added (expect 1):',
+    await page.locator('#view-story .passage', { hasText: 'company gathered' }).count());
+  await page.locator('#view-story .passage', { hasText: 'company gathered' }).locator('.entry-del').click();
+  await page.waitForTimeout(200);
+  console.log('passage removed (expect 0):',
+    await page.locator('#view-story .passage', { hasText: 'company gathered' }).count());
+
   // Read/edit toggle: read mode hides all authoring chrome, edit brings it back
   await page.click('.story-edit-toggle');
   console.log('read mode hides controls (expect 0 / 0 / 0):',
@@ -171,8 +198,8 @@ const mock = require('./mock.js');
   await page.mouse.move(src.x + src.width / 2, src.y + 40);
   await page.mouse.down();
   await page.mouse.move(src.x + src.width / 2 + 30, src.y + 48, { steps: 4 });   // passes the drag threshold
-  await page.locator('.subsection .add-card').scrollIntoViewIfNeeded();
-  const tgt = await page.locator('.subsection .add-card').boundingBox();
+  await page.locator('.subsection .add-card', { hasText: 'Add cards' }).scrollIntoViewIfNeeded();
+  const tgt = await page.locator('.subsection .add-card', { hasText: 'Add cards' }).boundingBox();
   await page.mouse.move(tgt.x + tgt.width / 2, tgt.y + tgt.height / 2, { steps: 12 });
   await page.mouse.up();
   await page.waitForTimeout(200);
@@ -207,8 +234,10 @@ const mock = require('./mock.js');
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
   const pushed = JSON.parse(Buffer.from(gh.doc.content, 'base64').toString('utf8'));
   console.log('synced doc owned count (expect 2):', Object.values(pushed.owned).filter(o => o.q + o.f + o.s > 0).length);
-  console.log('synced doc story (expect An Unexpected Party / 1 section card / 1 sub card):',
-    pushed.story.sections[0].title, '/', pushed.story.sections[0].cards.length, '/',
+  const secList = pushed.story.sections[0].cards;
+  console.log('synced doc story (expect 1 placement + 1 passage / 1 sub card):',
+    secList.filter(e => e.text === undefined).length, '+',
+    secList.filter(e => e.text !== undefined).length, '/',
     pushed.story.sections[0].subs[0].cards.length);
   console.log('PUT commits made:', gh.puts > 0);
   console.log('book never synced to repo (expect true):', !('book' in pushed) && !JSON.stringify(pushed).includes('oozy smell'));
