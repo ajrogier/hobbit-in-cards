@@ -66,6 +66,15 @@ const mock = require('./mock.js');
   await page.click('#theme-dark');
   await page.click('#sheen-subtle');
   console.log('back to subtle (expect false):', await page.evaluate(() => document.body.classList.contains('sheen-anim')));
+  // Device mode follows prefers-color-scheme live
+  await page.click('#theme-auto');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.waitForTimeout(120);
+  console.log('device mode follows light (expect true):', await page.evaluate(() => document.body.classList.contains('light')));
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.waitForTimeout(120);
+  console.log('device mode follows dark (expect false):', await page.evaluate(() => document.body.classList.contains('light')));
+  await page.click('#theme-dark');   // pin night for the rest of the run
   await page.keyboard.press('Escape');
   await page.click('#nav-tracker');
   await page.waitForSelector('#view-tracker .card');

@@ -745,6 +745,7 @@
     <div class="set-row">
       <span class="set-label">Theme</span>
       <div class="seg">
+        <button id="theme-auto" onclick="setTheme('auto')" title="Follow this device's light/dark setting">Device</button>
         <button id="theme-dark" onclick="setTheme('dark')">☾ Night</button>
         <button id="theme-light" onclick="setTheme('light')">☀ Day</button>
       </div>
@@ -1859,17 +1860,24 @@ document.addEventListener('keydown', e => {
 /* ---- Device preferences: theme & foil shimmer (not collection data) ---- */
 const THEME_KEY = 'hob_theme_v1';
 const SHEEN_KEY = 'hob_sheen_v1';
+const sysLight = matchMedia('(prefers-color-scheme: light)');
 function applyPrefs() {
-  const t = localStorage.getItem(THEME_KEY) || 'dark';
+  const stored = localStorage.getItem(THEME_KEY);          // 'dark' | 'light' | null = follow device
+  const t = stored || (sysLight.matches ? 'light' : 'dark');
   const s = localStorage.getItem(SHEEN_KEY) || 'subtle';
   document.body.classList.toggle('light', t === 'light');
   document.body.classList.toggle('sheen-anim', s === 'animated');
   const on = (id, c) => document.getElementById(id).classList.toggle('on', c);
-  on('theme-dark', t !== 'light'); on('theme-light', t === 'light');
+  on('theme-auto', !stored); on('theme-dark', stored === 'dark'); on('theme-light', stored === 'light');
   on('sheen-subtle', s !== 'animated'); on('sheen-animated', s === 'animated');
   document.getElementById('btn-signin').textContent = token ? 'Owner account…' : 'Sign in…';
 }
-function setTheme(t) { localStorage.setItem(THEME_KEY, t); applyPrefs(); }
+sysLight.addEventListener('change', () => { if (!localStorage.getItem(THEME_KEY)) applyPrefs(); });
+function setTheme(t) {
+  if (t === 'auto') localStorage.removeItem(THEME_KEY);
+  else localStorage.setItem(THEME_KEY, t);
+  applyPrefs();
+}
 function setSheen(s) { localStorage.setItem(SHEEN_KEY, s); applyPrefs(); }
 function openSettings() { applyPrefs(); document.getElementById('settings-modal').classList.add('show'); }
 function closeSettings() { document.getElementById('settings-modal').classList.remove('show'); }
