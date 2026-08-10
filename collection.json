@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T13:51:39.609Z",
+  "saved_at": "2026-08-10T13:51:43.429Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1522,11 +1522,6 @@
         "title": "Queer Lodgings",
         "blurb": "",
         "cards": [
-          {
-            "cardId": "12c8f2cc-ac9d-4cf6-9025-efe366b4e07f",
-            "note": "",
-            "fl": true
-          },
           {
             "text": "\"Don't pinch! You need not be frightened like a rabbit. What is finer than flying?\"",
             "cardId": "12c8f2cc-ac9d-4cf6-9025-efe366b4e07f"
