@@ -518,6 +518,18 @@
   .sec-controls button:disabled { opacity: .3; cursor: default; }
   .sec-add { margin: 6px 0 2px; }
   .story-tools { display: flex; justify-content: flex-end; margin: 0 0 18px; }
+  /* Read mode is the book: no ledger chrome on the cards */
+  #view-story.story-reading .owned-badge, #view-story.story-reading .qty-pill { display: none; }
+  .card[data-sec] { cursor: grab; }
+  .card[data-sec] img { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .drag-ghost {
+    position: fixed; z-index: 300; pointer-events: none;
+    opacity: .92; transform: scale(1.05) rotate(2deg);
+    box-shadow: 0 18px 40px rgba(0,0,0,.55);
+  }
+  .drag-source { opacity: .35; }
+  body.dragging { user-select: none; -webkit-user-select: none; }
+  body.dragging * { cursor: grabbing !important; }
   .tool-btn.on { border-color: var(--border-gold); color: var(--gold-bright); }
   .story-empty { text-align: center; padding: 30px 0 50px; }
   .story-empty .tool-btn { margin-top: 14px; }
@@ -1111,10 +1123,12 @@ function cardHTML(c, appr) {
         <button class="entry-del" onclick="event.stopPropagation();removeEntry('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i})" title="Remove from this part of the tale">✕</button>` : ''}
     </div>` : '';
   const tapAction = appr ? `openModal('${c.id}')` : `toggleCard('${c.id}')`;
+  const locAttrs = appr && appr.loc
+    ? ` data-sec="${appr.loc.sec}" data-sub="${appr.loc.sub || ''}" data-i="${appr.loc.i}"` : '';
   const tapHint = !canEdit() ? 'tap for details'
     : appr ? 'tap for copies, notes & placements'
     : 'tap to mark owned · + adds a copy · ⋯ for foils & the tale';
-  return `<div class="card ${cls}${(o.f||0) > 0 ? ' foiled' : ''}" data-id="${c.id}" onclick="${tapAction}" title="${esc(c.name)} — ${tapHint}">
+  return `<div class="card ${cls}${(o.f||0) > 0 ? ' foiled' : ''}" data-id="${c.id}"${locAttrs} onclick="${tapAction}" title="${esc(c.name)} — ${tapHint}">
     ${img}
     ${(o.f||0) > 0 ? '<span class="foil-sheen"></span>' : ''}
     <span class="owned-badge">${qtyLabel || '✓'}</span>
@@ -1151,6 +1165,7 @@ function toggleStoryEdit() { storyEdit = !storyEdit; renderStory(); }
 function renderStory() {
   const el = document.getElementById('story-chapters');
   const editing = canEdit() && storyEdit;
+  document.getElementById('view-story').classList.toggle('story-reading', !editing);
   document.getElementById('story-intro').style.display = story.sections.length ? 'none' : 'block';
   if (!story.sections.length) {
     el.innerHTML = `<div class="story-empty">
@@ -1172,7 +1187,7 @@ function renderStory() {
     const add = editing ? `<div class="card add-card" onclick="openPicker('${secId}','${subId || ''}')" title="Add cards from the set">
         <div class="noimg add-tile"><span class="add-plus">+</span><span>Add cards</span></div>
       </div>` : '';
-    return `<div class="grid">${cardsHTML}${add}</div>`
+    return `<div class="grid" data-sec="${secId}" data-sub="${subId || ''}">${cardsHTML}${add}</div>`
       + (!(list || []).length && !editing ? `<p class="empty-ch">Nothing placed here yet.</p>` : '');
   };
   const progress = list => {
@@ -1280,6 +1295,104 @@ function moveEntry(secId, subId, i, d) {
   [t.cards[i], t.cards[j]] = [t.cards[j], t.cards[i]];
   persist(); refresh();
 }
+/* ---- Drag & drop for placements (edit mode) ----
+   Mouse: grab and drag. Touch: hold ~300ms, then drag — a finger that moves
+   early is a scroll and cancels the hold. The dragged card itself is re-slotted
+   through the DOM while moving; on drop, its DOM position IS the new index. */
+let drag = null, suppressStoryClick = false;
+function dragStart(e) {
+  if (!storyEdit || !canEdit() || drag) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  if (e.target.closest('button, select, input, a')) return;
+  const card = e.target.closest('.card[data-sec]');
+  if (!card) return;
+  drag = { card, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY,
+           started: false, touch: e.pointerType === 'touch' };
+  if (drag.touch) drag.timer = setTimeout(() => { if (drag && !drag.started) dragActivate(); }, 300);
+  document.addEventListener('pointermove', dragMove);
+  document.addEventListener('pointerup', dragEnd);
+  document.addEventListener('pointercancel', dragCancel);
+}
+function dragActivate() {
+  const r = drag.card.getBoundingClientRect();
+  drag.dx = drag.x - r.left; drag.dy = drag.y - r.top;
+  drag.ghost = drag.card.cloneNode(true);
+  drag.ghost.classList.add('drag-ghost');
+  drag.ghost.style.width = r.width + 'px';
+  document.body.appendChild(drag.ghost);
+  drag.card.classList.add('drag-source');
+  document.body.classList.add('dragging');
+  drag.started = true;
+  if (navigator.vibrate) navigator.vibrate(12);
+  dragGhostTo(drag.x, drag.y);
+}
+function dragGhostTo(x, y) {
+  drag.ghost.style.left = (x - drag.dx) + 'px';
+  drag.ghost.style.top = (y - drag.dy) + 'px';
+}
+function dragMove(e) {
+  if (!drag) return;
+  drag.x = e.clientX; drag.y = e.clientY;
+  if (!drag.started) {
+    const dist = Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0);
+    if (drag.touch) { if (dist > 12) dragCancel(); }       // finger moved early: it's a scroll
+    else if (dist > 6) dragActivate();
+    return;
+  }
+  dragGhostTo(e.clientX, e.clientY);
+  if (e.clientY < 90) window.scrollBy(0, -14);
+  else if (innerHeight - e.clientY < 90) window.scrollBy(0, 14);
+  drag.ghost.style.display = 'none';
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  drag.ghost.style.display = '';
+  if (!under) return;
+  const overCard = under.closest('.card[data-sec]');
+  if (overCard && overCard !== drag.card) {
+    const r = overCard.getBoundingClientRect();
+    overCard.parentElement.insertBefore(drag.card, e.clientX < r.left + r.width / 2 ? overCard : overCard.nextSibling);
+    return;
+  }
+  // Anywhere on a subsection or section counts as its grid — generous drop zones
+  const zone = under.closest('.grid[data-sec]') || under.closest('.subsection') || under.closest('section.chapter');
+  const grid = zone && (zone.matches?.('.grid[data-sec]') ? zone : zone.querySelector('.grid[data-sec]'));
+  if (grid) {
+    const addTile = grid.querySelector('.add-card');
+    if (under.closest('.add-card') || !grid.contains(drag.card)) grid.insertBefore(drag.card, addTile);
+  }
+}
+function dragEnd() {
+  if (drag && drag.started) {
+    suppressStoryClick = true;                       // the release also fires a click
+    const grid = drag.card.closest('.grid[data-sec]');
+    const fromList = findTarget(drag.card.dataset.sec, drag.card.dataset.sub || null)?.cards;
+    const fromI = +drag.card.dataset.i;
+    if (grid && fromList && fromList[fromI]) {
+      const to = findTarget(grid.dataset.sec, grid.dataset.sub || null);
+      const toList = (to.cards ??= []);
+      const domIndex = [...grid.querySelectorAll('.card[data-sec]')].indexOf(drag.card);
+      if (!(toList === fromList && domIndex === fromI)) {
+        const [entry] = fromList.splice(fromI, 1);
+        toList.splice(domIndex, 0, entry);
+        persist();
+      }
+    }
+  }
+  dragCancel();
+}
+function dragCancel() {
+  if (!drag) return;
+  const dirtyDom = drag.started;   // only a started drag perturbs the DOM
+  clearTimeout(drag.timer);
+  if (drag.ghost) drag.ghost.remove();
+  drag.card.classList.remove('drag-source');
+  document.body.classList.remove('dragging');
+  document.removeEventListener('pointermove', dragMove);
+  document.removeEventListener('pointerup', dragEnd);
+  document.removeEventListener('pointercancel', dragCancel);
+  drag = null;
+  if (dirtyDom) refresh();         // re-render from data: DOM experiments discarded
+}
+
 function removeEntry(secId, subId, i) {
   if (guard()) return;
   const t = findTarget(secId, subId);
@@ -1560,6 +1673,15 @@ function toast(msg) {
   t.classList.add('show');
   clearTimeout(t._h);
   t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+{
+  const storyEl = document.getElementById('story-chapters');
+  storyEl.addEventListener('pointerdown', dragStart);
+  storyEl.addEventListener('click', e => {
+    if (suppressStoryClick) { suppressStoryClick = false; e.stopPropagation(); e.preventDefault(); }
+  }, true);
+  storyEl.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
+  document.addEventListener('touchmove', e => { if (drag && drag.started) e.preventDefault(); }, { passive: false });
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {

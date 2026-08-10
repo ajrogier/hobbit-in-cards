@@ -158,16 +158,34 @@ const mock = require('./mock.js');
     await page.locator('.sec-controls').count(), '/',
     await page.locator('.add-card').count(), '/',
     await page.locator('.entry-del').count());
+  console.log('read mode hides count badges (expect 0 visible):',
+    await page.locator('#view-story .owned-badge:visible').count());
   await page.click('.story-edit-toggle');
   console.log('edit mode restores controls (expect >0):', await page.locator('.sec-controls').count() > 0);
+
+  // Drag & drop: pull Smaug out of the section into the Bag End subsection
+  await page.waitForTimeout(150);   // let the re-render settle before grabbing coordinates
+  const src = await page.locator('.chapter .grid').first().locator('.card[data-id="mock-14"]').boundingBox();
+  await page.mouse.move(src.x + src.width / 2, src.y + 40);
+  await page.mouse.down();
+  await page.mouse.move(src.x + src.width / 2 + 30, src.y + 48, { steps: 4 });   // passes the drag threshold
+  await page.locator('.subsection .add-card').scrollIntoViewIfNeeded();
+  const tgt = await page.locator('.subsection .add-card').boundingBox();
+  await page.mouse.move(tgt.x + tgt.width / 2, tgt.y + tgt.height / 2, { steps: 12 });
+  await page.mouse.up();
+  await page.waitForTimeout(200);
+  console.log('drag moved Smaug to subsection (expect 1 / 1):',
+    await page.locator('.subsection .grid .card[data-id="mock-14"]').count(), '/',
+    await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count());
 
   // Sync: wait for the debounced commit of the edits above, then verify payload
   await page.waitForFunction(() =>
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
   const pushed = JSON.parse(Buffer.from(gh.doc.content, 'base64').toString('utf8'));
   console.log('synced doc owned count (expect 2):', Object.values(pushed.owned).filter(o => o.q + o.f + o.s > 0).length);
-  console.log('synced doc has story (expect An Unexpected Party / 2 cards):',
-    pushed.story.sections[0].title, '/', pushed.story.sections[0].cards.length);
+  console.log('synced doc story (expect An Unexpected Party / 1 section card / 1 sub card):',
+    pushed.story.sections[0].title, '/', pushed.story.sections[0].cards.length, '/',
+    pushed.story.sections[0].subs[0].cards.length);
   console.log('PUT commits made:', gh.puts > 0);
 
   // Persistence: reload, check owned + story survived (now served from the mock repo)
@@ -176,7 +194,7 @@ const mock = require('./mock.js');
   console.log('owned after reload (expect 2):', await page.textContent('#stat-owned'));
   await page.click('#nav-story');
   await page.waitForSelector('.chapter');
-  console.log('story after reload:', (await page.textContent('.ch-title')).trim(), '/',
+  console.log('story after reload (expect 1 card):', (await page.textContent('.ch-title')).trim(), '/',
     await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count(), 'cards');
 
   // Multi-copy protection: with >1 copies, a card tap opens the dialog instead of wiping counts
