@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T09:35:35.425Z",
+  "saved_at": "2026-08-10T09:36:08.257Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1153,6 +1153,13 @@
       {
         "id": "smsn1d7v2v8ah8",
         "title": "Roast Mutton",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1dx61g9mj6",
+        "title": "A Short Rest",
         "blurb": "",
         "cards": [],
         "subs": []
