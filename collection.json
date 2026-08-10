@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T12:43:31.880Z",
+  "saved_at": "2026-08-10T12:44:07.849Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1343,14 +1343,6 @@
             "note": ""
           },
           {
-            "cardId": "ccf2923e-5358-4e40-bc64-2953ac2d1692",
-            "note": ""
-          },
-          {
-            "cardId": "53cd94e9-6006-4d43-8032-7920103740fa",
-            "note": ""
-          },
-          {
             "cardId": "7f63f810-15a8-4bec-bd39-dbca453bcc1e",
             "note": ""
           },
@@ -1365,7 +1357,16 @@
         "id": "smsn1e4bqsth50",
         "title": "Over Hill and Under Hill",
         "blurb": "",
-        "cards": [],
+        "cards": [
+          {
+            "cardId": "ccf2923e-5358-4e40-bc64-2953ac2d1692",
+            "note": ""
+          },
+          {
+            "cardId": "53cd94e9-6006-4d43-8032-7920103740fa",
+            "note": ""
+          }
+        ],
         "subs": []
       },
       {
