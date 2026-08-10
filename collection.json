@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T13:44:28.454Z",
+  "saved_at": "2026-08-10T13:44:36.548Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1351,6 +1351,10 @@
             "fl": true
           },
           {
+            "text": "Gandalf thought of most things; and though he could not do everything, he could do a great deal for friends in a tight corner.",
+            "cardId": "7c5c6f1c-35cf-4172-b5a1-b73222b0723b"
+          },
+          {
             "cardId": "d2f60ad0-c887-4585-85f8-afcf72fb80d0",
             "note": ""
           },
@@ -1385,10 +1389,6 @@
           {
             "cardId": "7c5c6f1c-35cf-4172-b5a1-b73222b0723b",
             "note": ""
-          },
-          {
-            "text": "Gandalf thought of most things; and though he could not do everything, he could do a great deal for friends in a tight corner.",
-            "cardId": "7c5c6f1c-35cf-4172-b5a1-b73222b0723b"
           }
         ],
         "subs": []
