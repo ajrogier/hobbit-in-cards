@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T13:24:08.057Z",
+  "saved_at": "2026-08-10T13:24:14.357Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1417,8 +1417,7 @@
           },
           {
             "cardId": "15ae4d50-be2f-412c-bb6b-b0a06b60474a",
-            "note": "",
-            "fl": true
+            "note": ""
           },
           {
             "cardId": "50d91ef3-6f5d-4255-8d47-be731b5dad30",
@@ -1427,6 +1426,10 @@
           {
             "cardId": "30420a65-65f2-4331-9a5d-b1771da936b0",
             "note": ""
+          },
+          {
+            "text": "\"It won't see us, will it, my precious?\"",
+            "cardId": "15ae4d50-be2f-412c-bb6b-b0a06b60474a"
           }
         ],
         "subs": []
