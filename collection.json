@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T08:20:25.132Z",
+  "saved_at": "2026-08-10T08:22:44.719Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -930,7 +930,15 @@
     }
   },
   "story": {
-    "sections": []
+    "sections": [
+      {
+        "id": "smsmyrjf4fcb0a",
+        "title": "An Unexpected Party",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      }
+    ]
   },
   "settings": {
     "mainOnly": true
