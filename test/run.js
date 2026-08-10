@@ -87,6 +87,8 @@ const mock = require('./mock.js');
   // Search
   await page.fill('#search', 'smaug');
   console.log('search "smaug" count:', await page.locator('#tracker-grid .card').count());
+  await page.fill('#search', 'bolg');   // plain letters must find Bólg
+  console.log('diacritic-folded search finds Bólg (expect 1):', await page.locator('#tracker-grid .card').count());
   await page.fill('#search', '');
   await page.screenshot({ path: 'test/tracker.png', fullPage: false });
 
@@ -190,6 +192,8 @@ const mock = require('./mock.js');
     (await page.locator('.book-hit .where').textContent()).trim());
   await page.locator('.book-hit').click();
   console.log('jump shows chapter (expect Chapter V):', (await page.textContent('#book-text h2')).trim());
+  await page.fill('#book-search', 'kili');   // plain letters must find Kíli
+  console.log('book folds diacritics (expect 1):', await page.locator('.book-hit').count());
 
   // From a card's dialog straight to its flavor line in the book
   await page.click('#nav-tracker');

@@ -1212,15 +1212,15 @@ function cardHTML(c, appr) {
 }
 
 function renderTracker() {
-  const q = document.getElementById('search').value.trim().toLowerCase();
+  const q = fold(document.getElementById('search').value.trim());
   let list = collectible();
   if (rarityFilter.size) list = list.filter(c => rarityFilter.has(c.rarity));
   if (missingOnly) list = list.filter(c => !isOwned(c.id));
   if (ownedOnly) list = list.filter(c => isOwned(c.id));
   if (q) list = list.filter(c =>
-    c.name.toLowerCase().includes(q) ||
-    (c.type_line||'').toLowerCase().includes(q) ||
-    (c.flavor||'').toLowerCase().includes(q));
+    fold(c.name).includes(q) ||
+    fold(c.type_line).includes(q) ||
+    fold(c.flavor).includes(q));
   document.getElementById('tracker-grid').innerHTML =
     list.map(c => cardHTML(c)).join('') ||
     `<p class="empty-ch">No cards match — the road goes ever on, but not through this filter.</p>`;
@@ -1485,14 +1485,14 @@ function closePicker() { document.getElementById('picker-modal').classList.remov
 function renderPicker() {
   const t = pickerTarget && findTarget(pickerTarget.secId, pickerTarget.subId);
   if (!t) return;
-  const q = document.getElementById('picker-search').value.trim().toLowerCase();
+  const q = fold(document.getElementById('picker-search').value.trim());
   const inHere = {};
   (t.cards || []).forEach(e => { inHere[e.cardId] = (inHere[e.cardId] || 0) + 1; });
   let list = cards;
   if (q) list = list.filter(c =>
-    c.name.toLowerCase().includes(q) ||
-    (c.type_line || '').toLowerCase().includes(q) ||
-    (c.flavor || '').toLowerCase().includes(q));
+    fold(c.name).includes(q) ||
+    fold(c.type_line).includes(q) ||
+    fold(c.flavor).includes(q));
   document.getElementById('picker-results').innerHTML = list.map(c => `
     <div class="pick ${inHere[c.id] ? 'in' : ''} ${isOwned(c.id) ? '' : 'pick-unowned'}" onclick="pickCard('${c.id}')" title="${esc(c.name)}${c.flavor ? ' — ' + esc(c.flavor) : ''}">
       ${c.img ? `<img loading="lazy" draggable="false" src="${c.img}" alt="${esc(c.name)}">`
@@ -1752,7 +1752,7 @@ function showChapter(i, keepResults) {
   if (!keepResults) window.scrollTo({ top: 0 });
 }
 
-const bookNorm = s => s.toLowerCase()
+const bookNorm = s => fold(s)
   .replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"')
   .replace(/\s+/g, ' ');
 
@@ -1880,6 +1880,8 @@ function splitCSV(line) {
 
 /* ================= Utils ================= */
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+/* Search-fold: Glóin, Fíli, Thrór match plain gloin, fili, thror (and vice versa) */
+function fold(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;

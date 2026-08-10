@@ -15,7 +15,7 @@ const names = [
   ['13','Barrels Out of Bond','uncommon','Sorcery','Down the river to Lake-town.'],
   ['14','Smaug, the Magnificent','mythic','Legendary Creature — Dragon','Greatest of calamities.'],
   ['15','Bard, King of Dale','rare','Legendary Creature — Human Archer','The Black Arrow flew true.'],
-  ['16','Bolg of the North','rare','Legendary Creature — Orc Warrior','The Battle of Five Armies began.'],
+  ['16','Bólg of the North','rare','Legendary Creature — Orc Warrior','The Battle of Five Armies began.'],
   ['17','Sting, Bilbo\'s Sword','rare','Legendary Artifact — Equipment',''],
   ['18','My Precious','uncommon','Enchantment — Aura',''],
   ['19','Last Light of Durin\'s Day','rare','Enchantment','The thrush knocked.'],
