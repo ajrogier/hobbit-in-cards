@@ -728,7 +728,8 @@
 <script>
 /* ================= Data & state ================= */
 const SET_CODE = 'hob';
-const CACHE_KEY = 'hob_cards_v1';
+const TOKEN_SET_CODE = 'thob';   // the set's token cards
+const CACHE_KEY = 'hob_cards_v2';  // v2: includes tokens
 const CACHE_HOURS = 24;
 const OWNED_KEY = 'hob_owned_v1';
 const STORY_KEY = 'hob_story_v3';
@@ -814,20 +815,28 @@ async function loadCards(force) {
     return;
   }
   document.getElementById('loading').style.display = 'block';
-  try {
-    let url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent('set:'+SET_CODE)}&unique=prints&order=set`;
+  const fetchSet = async setCode => {
+    let url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent('set:'+setCode)}&unique=prints&order=set`;
     const all = [];
     while (url) {
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Scryfall returned ' + res.status);
+      if (!res.ok) {
+        if (setCode === TOKEN_SET_CODE && (res.status === 404 || res.status === 400)) return [];  // no token set: fine
+        throw new Error('Scryfall returned ' + res.status);
+      }
       const page = await res.json();
       all.push(...page.data);
       url = page.has_more ? page.next_page : null;
       if (url) await new Promise(r => setTimeout(r, 120)); // be polite to Scryfall
     }
-    cards = all.map(trimCard);
-    // Keep the main numbered run first; extras (showcase etc.) still included, sorted by collector number
-    cards.sort((a,b) => (parseInt(a.cn)||9999) - (parseInt(b.cn)||9999) || a.cn.localeCompare(b.cn));
+    return all.map(c => trimCard(c, setCode));
+  };
+  try {
+    cards = [...await fetchSet(SET_CODE), ...await fetchSet(TOKEN_SET_CODE)];
+    // Main numbered run first, then extras, then tokens — each sorted by collector number
+    cards.sort((a,b) =>
+      (a.set === b.set ? 0 : (a.set === SET_CODE ? -1 : 1)) ||
+      (parseInt(a.cn)||9999) - (parseInt(b.cn)||9999) || a.cn.localeCompare(b.cn));
     try { save(CACHE_KEY, { at: Date.now(), cards }); } catch(e) { /* storage full: fine, just no cache */ }
     onDataReady();
   } catch (err) {
@@ -840,10 +849,11 @@ async function loadCards(force) {
   }
 }
 
-function trimCard(c) {
+function trimCard(c, setCode) {
   const face = c.card_faces && c.card_faces[0].image_uris ? c.card_faces[0] : c;
   return {
     id: c.id,
+    set: setCode,
     name: c.name,
     cn: c.collector_number,
     rarity: c.rarity,
@@ -1041,7 +1051,7 @@ function signOut() {
 
 /* ================= Stats ================= */
 function isOwned(id) { return copiesOf(id) > 0; }
-function isMainSet(c) { return (parseInt(c.cn) || 0) <= MAIN_SET_MAX; }
+function isMainSet(c) { return c.set !== TOKEN_SET_CODE && (parseInt(c.cn) || 0) <= MAIN_SET_MAX; }
 /* The cards the quest is about: the whole set, or just the numbered main set. */
 function collectible() { return settings.mainOnly ? cards.filter(isMainSet) : cards; }
 function updateStats() {
@@ -1103,7 +1113,7 @@ function cardHTML(c, appr) {
     </span>
     <div class="meta">
       <span class="cname"><span class="rdot ${c.rarity}"></span>${esc(c.name)}</span>
-      <span class="cn">#${c.cn}</span>
+      <span class="cn">${c.set === TOKEN_SET_CODE ? 'T' : ''}#${c.cn}</span>
     </div>
     ${tagRow}
   </div>`;
@@ -1279,7 +1289,7 @@ function renderPicker() {
       ${c.img ? `<img loading="lazy" src="${c.img}" alt="${esc(c.name)}">`
               : `<div class="noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`}
       <span class="pick-badge">${inHere[c.id] ? '✓' + (inHere[c.id] > 1 ? '×' + inHere[c.id] : '') : '+'}</span>
-      <div class="pick-name">${esc(c.name)} <span class="cn">#${c.cn}</span></div>
+      <div class="pick-name">${esc(c.name)} <span class="cn">${c.set === TOKEN_SET_CODE ? 'T' : ''}#${c.cn}</span></div>
     </div>`).join('') || `<p class="empty-ch">Nothing in the set matches “${esc(q)}”.</p>`;
 }
 function pickCard(cardId) {
@@ -1485,12 +1495,13 @@ function importCSV(text) {
   const iQty = header.findIndex(h => h.includes('quantity'));
   const iFoil = header.findIndex(h => h === 'foil' || h.includes('foil'));
   if (iSet < 0 || iCN < 0) throw new Error('missing Set code / Collector number columns');
-  const byCN = Object.fromEntries(cards.map(c => [c.cn, c]));
+  const byKey = Object.fromEntries(cards.map(c => [c.set + ':' + c.cn, c]));
   let hits = 0;
   for (let i = 1; i < lines.length; i++) {
     const row = splitCSV(lines[i]);
-    if ((row[iSet]||'').trim().toLowerCase() !== SET_CODE) continue;
-    const card = byCN[(row[iCN]||'').trim()];
+    const rowSet = (row[iSet]||'').trim().toLowerCase();
+    if (rowSet !== SET_CODE && rowSet !== TOKEN_SET_CODE) continue;
+    const card = byKey[rowSet + ':' + (row[iCN]||'').trim()];
     if (!card) continue;
     const qty = parseInt(row[iQty]) || 1;
     const foil = /foil|etched/i.test(row[iFoil]||'') && !/^normal$/i.test((row[iFoil]||'').trim());

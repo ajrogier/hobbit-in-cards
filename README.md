@@ -5,7 +5,7 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
 
 ## What it does
 
-- **Collection view** — all cards of the set (fetched live from Scryfall, always current),
+- **Collection view** — all cards of the set and its tokens (fetched live from Scryfall),
   with search, rarity filters, owned/missing filters, quantity and foil counts. Foil copies
   shimmer on the card; on desktop the hover pill marks a foil in one click. A **Main set
   #1–193** chip narrows the quest to the numbered main set — special art treatments

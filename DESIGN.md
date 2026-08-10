@@ -44,10 +44,13 @@ dirty   (key hob_dirty_v1) — set on every local edit, cleared on successful co
 Everything below is unchanged and still in `localStorage`:
 
 ```
-cards        (cache, key hob_cards_v1, 24h TTL)
-  [{ id, name, cn, rarity, type_line, flavor, oracle, img, uri }]
-  — trimmed from Scryfall /cards/search?q=set:hob&unique=prints, paginated.
+cards        (cache, key hob_cards_v2, 24h TTL)
+  [{ id, set, name, cn, rarity, type_line, flavor, oracle, img, uri }]
+  — trimmed from Scryfall /cards/search?q=set:hob&unique=prints (paginated), plus the
+    token companion set (set:thob), which fails soft if Scryfall has no such set.
   — unique=prints means each art/printing is its own entry: the picker exposes them all.
+  — tokens render as T#n, sort after the main cards, never count as main set, and
+    CSV import matches on set code + collector number since numbering restarts.
 
 owned        (key hob_owned_v1)
   { [cardId]: { q, f, s } }        // regular, foil ✦ copy counts

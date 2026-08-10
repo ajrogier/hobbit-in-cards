@@ -31,4 +31,20 @@ const data = names.map(([cn, name, rarity, type_line, flavor]) => ({
   image_uris: null, // no images offline; site should show name placeholders
   scryfall_uri: 'https://scryfall.com/',
 }));
-module.exports = { object: 'list', total_cards: data.length, has_more: false, data };
+// Token companion set (thob): same collector numbers restart at 1
+const tokens = [
+  ['1','Dragon','common','Token Creature — Dragon',''],
+  ['2','Spider','common','Token Creature — Spider','Attercop!'],
+].map(([cn, name, rarity, type_line, flavor]) => ({
+  id: 'tok-' + cn,
+  name, collector_number: cn, rarity, type_line,
+  flavor_text: flavor,
+  oracle_text: '',
+  image_uris: null,
+  scryfall_uri: 'https://scryfall.com/',
+}));
+
+module.exports = {
+  object: 'list', total_cards: data.length, has_more: false, data,
+  tokenResponse: { object: 'list', total_cards: tokens.length, has_more: false, data: tokens },
+};

@@ -8,8 +8,10 @@ const mock = require('./mock.js');
   page.on('console', m => { if (m.type() === 'error') console.log('CONSOLE ERROR:', m.text()); });
   page.on('pageerror', e => console.log('PAGE ERROR:', e.message));
 
-  await page.route('**/api.scryfall.com/**', route =>
-    route.fulfill({ contentType: 'application/json', body: JSON.stringify(mock) }));
+  const scryfallRoute = route =>
+    route.fulfill({ contentType: 'application/json',
+      body: JSON.stringify(route.request().url().includes('thob') ? mock.tokenResponse : mock) });
+  await page.route('**/api.scryfall.com/**', scryfallRoute);
 
   // Mock GitHub: collection.json contents API (404 until first PUT, then serves the stored doc)
   const gh = { doc: null, n: 0, puts: 0 };
@@ -36,7 +38,7 @@ const mock = require('./mock.js');
   await page.waitForSelector('#view-tracker .card', { timeout: 10000 });
 
   // Stats (mock set: 20 main cards + 1 special art #300)
-  console.log('total (expect 21):', await page.textContent('#stat-total'));
+  console.log('total (expect 23 incl. 2 tokens):', await page.textContent('#stat-total'));
 
   // Toggle two cards owned
   await page.click('.card[data-id="mock-8"]');   // Gollum
@@ -73,12 +75,13 @@ const mock = require('./mock.js');
   console.log('main-set total (expect 20):', await page.textContent('#stat-total'));
   console.log('special hidden (expect 0):', await page.locator('.card[data-id="mock-300"]').count());
   await page.click('#chip-main');
-  console.log('full total again (expect 21):', await page.textContent('#stat-total'));
+  console.log('full total again (expect 23):', await page.textContent('#stat-total'));
+  console.log('token shown with T# (expect T#1):', (await page.textContent('.card[data-id="tok-1"] .cn')).trim());
 
   // Filter: missing only should exclude owned
   await page.click('#chip-missing');
   const missingCount = await page.locator('#tracker-grid .card').count();
-  console.log('missing-only count (expect 19):', missingCount);
+  console.log('missing-only count (expect 21):', missingCount);
   await page.click('#chip-missing');
 
   // Search
@@ -174,8 +177,7 @@ const mock = require('./mock.js');
   // Viewer mode: fresh context without a token -> read-only, but sees the collection
   const viewerCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const viewer = await viewerCtx.newPage();
-  await viewer.route('**/api.scryfall.com/**', route =>
-    route.fulfill({ contentType: 'application/json', body: JSON.stringify(mock) }));
+  await viewer.route('**/api.scryfall.com/**', scryfallRoute);
   await viewer.route('**/api.github.com/**', ghRoute);
   await viewer.goto('file://' + path.resolve(__dirname, '..', 'index.html'));
   await viewer.waitForSelector('#view-tracker .card');
