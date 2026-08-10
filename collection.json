@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T10:47:15.652Z",
+  "saved_at": "2026-08-10T10:53:24.943Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1231,7 +1231,20 @@
         "id": "smsn1dx61g9mj6",
         "title": "A Short Rest",
         "blurb": "",
-        "cards": [],
+        "cards": [
+          {
+            "cardId": "fbcb310c-be73-46f8-8e65-8632454ccc6e",
+            "note": ""
+          },
+          {
+            "cardId": "79edf5f6-f6b6-4271-bd2a-14a980f30616",
+            "note": ""
+          },
+          {
+            "cardId": "ad0dba36-d056-4bc1-987a-391da26ad267",
+            "note": ""
+          }
+        ],
         "subs": []
       },
       {
@@ -1349,6 +1362,6 @@
     ]
   },
   "settings": {
-    "mainOnly": true
+    "mainOnly": false
   }
 }
