@@ -498,7 +498,7 @@
     .qty-pill { opacity: 1; }
     .qty-pill button { width: 42px; height: 42px; font-size: 22px; }
     .qty-pill .foil { display: none; }   /* touch stays two-button; foil lives in the dialog */
-    .entry-del { width: 30px; height: 30px; font-size: 13px; }
+    .entry-del, .entry-move { width: 30px; height: 30px; font-size: 13px; }
     .sec-controls button { width: 36px; height: 36px; font-size: 16px; }
     .copy-ctl button { width: 38px; height: 38px; font-size: 18px; }
     .appear-row .del { width: 38px; height: 38px; }
@@ -517,6 +517,8 @@
   .sec-controls button:hover:not(:disabled) { border-color: var(--border-gold); color: var(--gold-bright); }
   .sec-controls button:disabled { opacity: .3; cursor: default; }
   .sec-add { margin: 6px 0 2px; }
+  .story-tools { display: flex; justify-content: flex-end; margin: 0 0 18px; }
+  .tool-btn.on { border-color: var(--border-gold); color: var(--gold-bright); }
   .story-empty { text-align: center; padding: 30px 0 50px; }
   .story-empty .tool-btn { margin-top: 14px; }
   .entry-del {
@@ -525,6 +527,13 @@
     color: #d98d5f; cursor: pointer; font-size: 11px; flex-shrink: 0;
   }
   .entry-del:hover { border-color: #8a4d2c; }
+  .entry-move {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid var(--border); background: none;
+    color: var(--parchment-dim); cursor: pointer; font-size: 12px; flex-shrink: 0;
+  }
+  .entry-move:hover:not(:disabled) { border-color: var(--border-gold); color: var(--gold-bright); }
+  .entry-move:disabled { opacity: .3; cursor: default; }
   .tag-pill.note { color: #e0c8a0; border-color: #6b5a33; font-style: italic; }
   .add-card .add-tile { gap: 4px; color: var(--ink-faint); border-style: dashed; cursor: pointer; }
   .add-card .add-plus { font-size: 34px; line-height: 1; color: var(--gold); }
@@ -1096,7 +1105,10 @@ function cardHTML(c, appr) {
   const tagRow = appr ? `<div class="appear-tag">
       ${appr.note ? `<span class="tag-pill note">${esc(appr.note)}</span>` : ''}
       ${isOwned(c.id) && !appr.covered ? '<span class="need-copy">needs another copy</span>' : ''}
-      ${appr.loc && canEdit() ? `<button class="entry-del" onclick="event.stopPropagation();removeEntry('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i})" title="Remove from this part of the tale">✕</button>` : ''}
+      ${appr.loc && canEdit() ? `
+        <button class="entry-move" onclick="event.stopPropagation();moveEntry('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i},-1)" title="Move earlier in this part" ${appr.loc.i === 0 ? 'disabled' : ''}>‹</button>
+        <button class="entry-move" onclick="event.stopPropagation();moveEntry('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i},1)" title="Move later in this part" ${appr.loc.i >= appr.loc.len - 1 ? 'disabled' : ''}>›</button>
+        <button class="entry-del" onclick="event.stopPropagation();removeEntry('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i})" title="Remove from this part of the tale">✕</button>` : ''}
     </div>` : '';
   const tapAction = appr ? `openModal('${c.id}')` : `toggleCard('${c.id}')`;
   const tapHint = !canEdit() ? 'tap for details'
@@ -1134,8 +1146,11 @@ function renderTracker() {
     `<p class="empty-ch">No cards match — the road goes ever on, but not through this filter.</p>`;
 }
 
+let storyEdit = false;   // read mode by default: the clean book view
+function toggleStoryEdit() { storyEdit = !storyEdit; renderStory(); }
 function renderStory() {
   const el = document.getElementById('story-chapters');
+  const editing = canEdit() && storyEdit;
   document.getElementById('story-intro').style.display = story.sections.length ? 'none' : 'block';
   if (!story.sections.length) {
     el.innerHTML = `<div class="story-empty">
@@ -1151,13 +1166,14 @@ function renderStory() {
       .map((e, i) => {
         const c = byId[e.cardId];
         if (!c) return '';
-        return cardHTML(c, { note: e.note, covered: flags.get(e), loc: { sec: secId, sub: subId, i } });
+        return cardHTML(c, { note: e.note, covered: flags.get(e),
+          loc: editing ? { sec: secId, sub: subId, i, len: (list || []).length } : null });
       }).join('');
-    const add = canEdit() ? `<div class="card add-card" onclick="openPicker('${secId}','${subId || ''}')" title="Add cards from the set">
+    const add = editing ? `<div class="card add-card" onclick="openPicker('${secId}','${subId || ''}')" title="Add cards from the set">
         <div class="noimg add-tile"><span class="add-plus">+</span><span>Add cards</span></div>
       </div>` : '';
     return `<div class="grid">${cardsHTML}${add}</div>`
-      + (!(list || []).length && !canEdit() ? `<p class="empty-ch">Nothing placed here yet.</p>` : '');
+      + (!(list || []).length && !editing ? `<p class="empty-ch">Nothing placed here yet.</p>` : '');
   };
   const progress = list => {
     if (!list.length) return '';
@@ -1166,7 +1182,7 @@ function renderStory() {
     return `<span class="ch-progress">${got}/${list.length}
       <span class="mini-track"><span class="mini-fill" style="width:${pct}%;display:block"></span></span></span>`;
   };
-  const controls = (secId, subId, idx, max) => canEdit() ? `<span class="sec-controls">
+  const controls = (secId, subId, idx, max) => editing ? `<span class="sec-controls">
       <button onclick="renameSection('${secId}','${subId || ''}')" title="Rename / edit description">✎</button>
       <button onclick="moveSection('${secId}','${subId || ''}',-1)" title="Move up" ${idx === 0 ? 'disabled' : ''}>↑</button>
       <button onclick="moveSection('${secId}','${subId || ''}',1)" title="Move down" ${idx === max ? 'disabled' : ''}>↓</button>
@@ -1194,16 +1210,20 @@ function renderStory() {
           ${sub.blurb ? `<p class="ch-blurb">${esc(sub.blurb)}</p>` : ''}
           ${grid(sub.cards, sec.id, sub.id)}
         </div>`).join('')}
-      ${canEdit() ? `<button class="tool-btn sec-add" onclick="addSection('${sec.id}')">+ Add subsection</button>` : ''}
+      ${editing ? `<button class="tool-btn sec-add" onclick="addSection('${sec.id}')">+ Add subsection</button>` : ''}
     </section>`;
   });
-  if (canEdit()) html += `<button class="tool-btn sec-add" onclick="addSection()">+ Add section</button>`;
+  if (editing) html += `<button class="tool-btn sec-add" onclick="addSection()">+ Add section</button>`;
+  if (canEdit()) html = `<div class="story-tools">
+      <button class="tool-btn story-edit-toggle ${editing ? 'on' : ''}" onclick="toggleStoryEdit()">${editing ? '✓ Done editing' : '✎ Edit the tale'}</button>
+    </div>` + html;
   el.innerHTML = html;
 }
 
 /* ---- Outline editing (owner only) ---- */
 function addSection(parentSecId) {
   if (guard()) return;
+  storyEdit = true;
   const what = parentSecId ? 'subsection' : 'section';
   const title = (prompt(`Title of the new ${what}:`) || '').trim();
   if (!title) return;
@@ -1251,6 +1271,14 @@ function deleteSection(secId, subId) {
     story.sections = story.sections.filter(s => s.id !== secId);
   }
   persist(); renderStory();
+}
+function moveEntry(secId, subId, i, d) {
+  if (guard()) return;
+  const t = findTarget(secId, subId || null);
+  const j = i + d;
+  if (!t || !t.cards[i] || j < 0 || j >= t.cards.length) return;
+  [t.cards[i], t.cards[j]] = [t.cards[j], t.cards[i]];
+  persist(); refresh();
 }
 function removeEntry(secId, subId, i) {
   if (guard()) return;

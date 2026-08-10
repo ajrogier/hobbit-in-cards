@@ -85,14 +85,19 @@ a `story`.
 
 ## 3. Authoring the tale
 
-All owner-only, all guarded by `guard()`:
+All owner-only, all guarded by `guard()`. The Tale has an explicit **read/edit toggle**
+(`storyEdit`, transient): read mode is the clean book view — identical to what visitors
+see — and edit mode surfaces the authoring chrome (section controls, add tiles, and the
+per-placement ‹ › ✕ buttons). Starting a section from the blank page flips into edit mode.
 
 - `addSection(parentSecId?)` / `renameSection` / `moveSection` / `deleteSection` — outline CRUD
   via `prompt()`/`confirm()` (works fine on mobile, no extra UI).
 - **Picker** (`openPicker(secId, subId?)`) — modal that live-searches the whole set on
   name + type_line + flavor text; tap a card to place it in the target section, tap again to
   remove. Already-placed cards show a ✓ badge; unowned ones render dimmed but are placeable.
-- `removeEntry` — the ✕ under a card in the story view drops that one placement.
+- `moveEntry` — ‹ › under a card reorder it within its section/subsection; order matters,
+  because copies cover placements in reading order.
+- `removeEntry` — the ✕ under a card drops that one placement.
 
 ## 4. UI map
 

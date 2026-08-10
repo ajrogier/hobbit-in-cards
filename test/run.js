@@ -123,6 +123,13 @@ const mock = require('./mock.js');
   console.log('cards in section (expect 2):',
     await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count());
 
+  // Reorder within the section: move Gollum (2nd) before Smaug
+  await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move').first().click();
+  console.log('first card after reorder (expect mock-8):',
+    await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').first().getAttribute('data-id'));
+  console.log('start-of-list ‹ disabled (expect true):',
+    await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move').first().isDisabled());
+
   // Second placement of Gollum in the subsection -> 1 copy, 2 placements -> amber
   await page.locator('.subsection .add-card').click();
   await page.fill('#picker-search', 'gollum');
@@ -144,6 +151,15 @@ const mock = require('./mock.js');
   await page.waitForTimeout(300);
   console.log('note pill rendered (expect 1):',
     await page.locator('#view-story .tag-pill.note', { hasText: 'pocketses' }).count());
+
+  // Read/edit toggle: read mode hides all authoring chrome, edit brings it back
+  await page.click('.story-edit-toggle');
+  console.log('read mode hides controls (expect 0 / 0 / 0):',
+    await page.locator('.sec-controls').count(), '/',
+    await page.locator('.add-card').count(), '/',
+    await page.locator('.entry-del').count());
+  await page.click('.story-edit-toggle');
+  console.log('edit mode restores controls (expect >0):', await page.locator('.sec-controls').count() > 0);
 
   // Sync: wait for the debounced commit of the edits above, then verify payload
   await page.waitForFunction(() =>
