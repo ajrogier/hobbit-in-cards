@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T09:41:02.624Z",
+  "saved_at": "2026-08-10T09:41:10.771Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1048,6 +1048,10 @@
             "note": ""
           },
           {
+            "text": "Once in a while, members of the Took clan would go and have adventures.",
+            "cardId": "88f0c189-c9ed-4ea3-ae62-3d8ac6c7fecf"
+          },
+          {
             "cardId": "0de529a7-bdc5-4581-a169-1ad123bc099a",
             "note": ""
           },
@@ -1154,10 +1158,6 @@
           {
             "cardId": "c49d378e-9549-4320-b3c6-1aeb216d1e98",
             "note": ""
-          },
-          {
-            "text": "Once in a while, members of the Took clan would go and have adventures.",
-            "cardId": "88f0c189-c9ed-4ea3-ae62-3d8ac6c7fecf"
           }
         ],
         "subs": []
