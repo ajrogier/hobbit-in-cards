@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T09:41:47.607Z",
+  "saved_at": "2026-08-10T09:42:10.430Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1012,10 +1012,6 @@
         "blurb": "",
         "cards": [
           {
-            "text": "In a hole in the ground there lived a Hobbit . . .",
-            "cardId": "0365c439-30bf-4d32-a791-166751bdb996"
-          },
-          {
             "cardId": "0365c439-30bf-4d32-a791-166751bdb996",
             "note": ""
           },
@@ -1154,6 +1150,10 @@
           {
             "cardId": "c49d378e-9549-4320-b3c6-1aeb216d1e98",
             "note": ""
+          },
+          {
+            "text": "In a hole in the ground there lived a Hobbit . . .",
+            "cardId": "0365c439-30bf-4d32-a791-166751bdb996"
           }
         ],
         "subs": []
