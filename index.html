@@ -529,6 +529,7 @@
     .qty-pill button { width: 42px; height: 42px; font-size: 22px; }
     .qty-pill .foil { display: none; }   /* touch stays two-button; foil lives in the dialog */
     .entry-del, .entry-move { width: 30px; height: 30px; font-size: 13px; }
+    .drag-handle { width: 46px; height: 34px; font-size: 16px; }
     .sec-controls button { width: 36px; height: 36px; font-size: 16px; }
     .copy-ctl button { width: 38px; height: 38px; font-size: 18px; }
     .appear-row .del { width: 38px; height: 38px; }
@@ -551,7 +552,18 @@
   /* Read mode is the book: no ledger chrome on the cards */
   #view-story.story-reading .owned-badge, #view-story.story-reading .qty-pill { display: none; }
   .card[data-sec] { cursor: grab; }
-  .card[data-sec] img { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .drag-handle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 24px; border-radius: 6px;
+    border: 1px solid var(--border); color: var(--parchment-dim);
+    font-size: 13px; letter-spacing: 1px;
+    cursor: grab; flex-shrink: 0;
+    touch-action: none;               /* the browser never turns this touch into a scroll */
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  .drag-handle:hover { border-color: var(--border-gold); color: var(--gold-bright); }
+  .card[data-sec] img { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
+  .card[data-sec] { user-select: none; -webkit-user-select: none; }
   .drag-ghost {
     position: fixed; z-index: 300; pointer-events: none;
     opacity: .92; transform: scale(1.05) rotate(2deg);
@@ -1165,9 +1177,10 @@ function cardHTML(c, appr) {
     (o.s||0)>0 ? `<span class="star-special">★${o.s}</span>` : '',
   ].filter(Boolean).join(' ');
   const img = c.img
-    ? `<img loading="lazy" src="${c.img}" alt="${esc(c.name)}">`
+    ? `<img loading="lazy" draggable="false" src="${c.img}" alt="${esc(c.name)}">`
     : `<div class="noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`;
   const tagRow = appr ? `<div class="appear-tag">
+      ${appr.loc && canEdit() ? `<span class="drag-handle" title="Drag to move this card">⠿</span>` : ''}
       ${appr.note ? `<span class="tag-pill note">${esc(appr.note)}</span>` : ''}
       ${isOwned(c.id) && !appr.covered ? '<span class="need-copy">needs another copy</span>' : ''}
       ${appr.loc && canEdit() ? `
@@ -1359,12 +1372,14 @@ function dragStart(e) {
   if (e.target.closest('button, select, input, a')) return;
   const card = e.target.closest('.card[data-sec]');
   if (!card) return;
+  const onHandle = !!e.target.closest('.drag-handle');
   drag = { card, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY,
            started: false, touch: e.pointerType === 'touch' };
-  if (drag.touch) drag.timer = setTimeout(() => { if (drag && !drag.started) dragActivate(); }, 300);
   document.addEventListener('pointermove', dragMove);
   document.addEventListener('pointerup', dragEnd);
   document.addEventListener('pointercancel', dragCancel);
+  if (onHandle) dragActivate();   // the handle drags at once, on any pointer
+  else if (drag.touch) drag.timer = setTimeout(() => { if (drag && !drag.started) dragActivate(); }, 300);
 }
 function dragActivate() {
   const r = drag.card.getBoundingClientRect();
@@ -1480,7 +1495,7 @@ function renderPicker() {
     (c.flavor || '').toLowerCase().includes(q));
   document.getElementById('picker-results').innerHTML = list.map(c => `
     <div class="pick ${inHere[c.id] ? 'in' : ''} ${isOwned(c.id) ? '' : 'pick-unowned'}" onclick="pickCard('${c.id}')" title="${esc(c.name)}${c.flavor ? ' — ' + esc(c.flavor) : ''}">
-      ${c.img ? `<img loading="lazy" src="${c.img}" alt="${esc(c.name)}">`
+      ${c.img ? `<img loading="lazy" draggable="false" src="${c.img}" alt="${esc(c.name)}">`
               : `<div class="noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`}
       <span class="pick-badge">${inHere[c.id] ? '✓' + (inHere[c.id] > 1 ? '×' + inHere[c.id] : '') : '+'}</span>
       <div class="pick-name">${esc(c.name)} <span class="cn">${c.set === TOKEN_SET_CODE ? 'T' : ''}#${c.cn}</span></div>
@@ -1879,6 +1894,7 @@ function toast(msg) {
     if (suppressStoryClick) { suppressStoryClick = false; e.stopPropagation(); e.preventDefault(); }
   }, true);
   storyEl.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
+  storyEl.addEventListener('dragstart', e => e.preventDefault());   // native image/text drag would eat our pointer drag
   document.addEventListener('touchmove', e => { if (drag && drag.started) e.preventDefault(); }, { passive: false });
 }
 document.addEventListener('keydown', e => {

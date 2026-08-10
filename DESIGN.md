@@ -97,6 +97,10 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   remove. Already-placed cards show a ✓ badge; unowned ones render dimmed but are placeable.
 - `moveEntry` — ‹ › under a card reorder it within its section/subsection; order matters,
   because copies cover placements in reading order.
+- **Drag & drop** — mouse-drag the card (native image drag is suppressed: draggable=false,
+  -webkit-user-drag none, dragstart preventDefault — without all three the browser's own
+  image-drag eats the pointer stream). On touch, the ⠿ handle (touch-action: none) drags
+  immediately; the card body needs a ~300ms hold, which real fingers often lose to scroll.
 - `removeEntry` — the ✕ under a card drops that one placement.
 
 ## 3b. The Book (device-local reader)

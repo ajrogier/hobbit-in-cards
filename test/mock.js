@@ -23,12 +23,17 @@ const names = [
   // special art treatment: same name, collector number beyond the main set
   ['300','Bilbo, Fellow Conspirator','rare','Legendary Creature — Halfling Rogue','"I am a burglar, apparently."'],
 ];
+const artFor = cn => cn === '14'
+  ? { normal: 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="488" height="680">' +
+      '<rect width="488" height="680" fill="#7a2e1e"/><circle cx="244" cy="300" r="150" fill="#d0722e"/></svg>') }
+  : null; // most cards keep placeholders; one real <img> exercises native-drag suppression
 const data = names.map(([cn, name, rarity, type_line, flavor]) => ({
   id: 'mock-' + cn,
   name, collector_number: cn, rarity, type_line,
   flavor_text: flavor,
   oracle_text: '',
-  image_uris: null, // no images offline; site should show name placeholders
+  image_uris: artFor(cn),
   scryfall_uri: 'https://scryfall.com/',
 }));
 // Token companion set (thob): same collector numbers restart at 1
