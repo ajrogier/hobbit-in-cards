@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T09:36:40.715Z",
+  "saved_at": "2026-08-10T09:36:54.028Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1181,6 +1181,20 @@
       {
         "id": "smsn1em95jhgyv",
         "title": "Out of the Frying-Pan into the Fire",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1ervcta9uv",
+        "title": "Queer Lodgings",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1ewiczviox",
+        "title": "Flies and Spiders",
         "blurb": "",
         "cards": [],
         "subs": []
