@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T09:55:25.476Z",
+  "saved_at": "2026-08-10T10:04:10.634Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1170,7 +1170,12 @@
         "id": "smsn1d7v2v8ah8",
         "title": "Roast Mutton",
         "blurb": "",
-        "cards": [],
+        "cards": [
+          {
+            "cardId": "5e289bb3-f6de-450d-9f7e-77e2e70cb7cc",
+            "note": ""
+          }
+        ],
         "subs": []
       },
       {
