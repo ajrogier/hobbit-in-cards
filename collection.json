@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T09:37:37.672Z",
+  "saved_at": "2026-08-10T09:37:57.050Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1237,6 +1237,20 @@
       {
         "id": "smsn1fu6hgjcae",
         "title": "Fire and Water",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1g27n00cc0",
+        "title": "The Gathering of the Clouds",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1g95lp3ef9",
+        "title": "A Thief in the Night",
         "blurb": "",
         "cards": [],
         "subs": []
