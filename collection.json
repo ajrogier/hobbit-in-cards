@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T14:14:31.622Z",
+  "saved_at": "2026-08-10T14:14:34.890Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1551,6 +1551,10 @@
             "cardId": "1f8403a2-849c-4a59-b0ed-c8803995028d"
           },
           {
+            "cardId": "367d5f8b-77ee-47f7-bc71-972d62c280a9",
+            "note": ""
+          },
+          {
             "cardId": "804589b7-3ef9-473d-97cc-c61a2d41f70d",
             "note": "",
             "fl": true
@@ -1616,10 +1620,6 @@
           {
             "text": "\"Well, here is Mirkwood—the greatest of the forests of the northern world. I hope you like the look of it.\"\n—Gandalf",
             "cardId": "880adfc8-69cf-4062-a804-e65b6cb6056d"
-          },
-          {
-            "cardId": "367d5f8b-77ee-47f7-bc71-972d62c280a9",
-            "note": ""
           }
         ],
         "subs": []
