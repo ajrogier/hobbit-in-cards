@@ -27,6 +27,9 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   Visitors see the collection read-only; editing requires the owner sign-in (below).
 - **Export** downloads a JSON backup; **Import** restores it — and also accepts a
   **ManaBox CSV export**, so you can scan cards with your phone and import them here.
+- **Day & night themes** — the ☀/☾ button switches between the dark default and a light
+  theme styled after Tolkien's original Hobbit cover (cream sky, ink linework, forest
+  greens, blue-grey mountains, red-sun accent). A per-device preference.
 
 ## Owner sign-in (who can edit)
 

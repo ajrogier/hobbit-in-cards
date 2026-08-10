@@ -27,7 +27,45 @@
     --rar-r: #d8b95e;
     --rar-m: #d0722e;
     --shadow: 0 10px 30px rgba(0,0,0,.5);
+    --overlay: rgba(19,18,16,.87);
   }
+
+  /* ---------- Day theme: Tolkien's original Hobbit cover ----------
+     Cream sky, black ink, the greens of the forest border, blue-grey
+     mountains, and the red sun as the warm accent. */
+  body.light {
+    --bg: #ece5d1;
+    --bg-raised: #e2dac3;
+    --bg-card: #d8cfb5;
+    --parchment: #26251f;
+    --parchment-dim: #4c4f3e;
+    --ink-faint: #767860;
+    --gold: #3e6b3f;
+    --gold-bright: #2e5731;
+    --ember: #c4373c;
+    --leaf: #58803f;
+    --border: #b5ab8c;
+    --border-gold: #6d8a5e;
+    --rar-c: #7d7d76;
+    --rar-u: #5e7f95;
+    --rar-r: #9c7f22;
+    --rar-m: #b85a1c;
+    --shadow: 0 10px 30px rgba(70,60,35,.28);
+    --overlay: rgba(240,234,216,.92);
+    background-image:
+      radial-gradient(1200px 500px at 50% -100px, rgba(62,107,63,.10), transparent 70%),
+      radial-gradient(900px 600px at 90% 110%, rgba(196,55,60,.07), transparent 70%);
+  }
+  body.light ::selection { background: rgba(62,107,63,.25); }
+  body.light .card.unowned img, body.light .card.unowned .noimg,
+  body.light .pick.pick-unowned img, body.light .pick.pick-unowned .noimg {
+    filter: grayscale(.95) brightness(1.02) opacity(.55);
+  }
+  body.light .card.foiled img, body.light .card.foiled .noimg {
+    box-shadow: 0 0 0 2px #5e7f95, 0 6px 18px rgba(94,127,149,.35);
+  }
+  body.light .qty-pill .foil { color: #3d6b85; border-color: #5e7f95; }
+  body.light .foil-star { color: #3d6b85; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body {
@@ -113,7 +151,7 @@
     display: flex; justify-content: center; gap: 8px;
     padding: 14px 16px;
     margin-top: 30px;
-    background: rgba(19,18,16,.88);
+    background: var(--overlay);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--border);
   }
@@ -255,7 +293,7 @@
     width: 30px; height: 30px;
     border-radius: 50%;
     border: 1px solid var(--border-gold);
-    background: rgba(19,18,16,.85);
+    background: var(--overlay);
     color: var(--gold-bright);
     font-size: 17px; cursor: pointer;
   }
@@ -263,22 +301,39 @@
   .qty-pill .more:hover { color: var(--gold-bright); border-color: var(--border-gold); }
   .qty-pill .foil { color: #9ecfdd; border-color: #3d5560; }
   .qty-pill .foil:hover { border-color: #9ecfdd; }
-  /* Foil copies shimmer on the card itself */
+  /* Foil copies shimmer on the card itself: a rainbow wash plus a slow travelling gleam */
   .foil-sheen {
     position: absolute; top: 0; left: 0; width: 100%;
     aspect-ratio: 488/680; border-radius: 4.75% / 3.5%;
-    background: linear-gradient(115deg,
-      rgba(158,207,221,.28), rgba(216,167,224,.16) 30%,
-      rgba(201,162,75,.20) 55%, rgba(158,221,180,.18) 78%, rgba(158,207,221,.26));
+    background:
+      linear-gradient(115deg,
+        rgba(110,190,255,.50) 0%, rgba(255,140,220,.38) 22%,
+        rgba(255,225,120,.45) 45%, rgba(120,255,190,.40) 68%,
+        rgba(150,160,255,.48) 88%, rgba(110,190,255,.50) 100%);
+    background-size: 300% 300%;
     mix-blend-mode: screen;
+    animation: foil-drift 7s ease-in-out infinite alternate;
     pointer-events: none;
   }
-  .card.foiled img, .card.foiled .noimg { box-shadow: 0 0 0 2px #9ecfdd, 0 6px 18px rgba(158,207,221,.3); }
+  .foil-sheen::after {
+    content: '';
+    position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(115deg,
+      transparent 30%, rgba(255,255,255,.55) 48%, rgba(255,255,255,.2) 52%, transparent 65%);
+    background-size: 300% 300%;
+    animation: foil-gleam 3.6s linear infinite;
+  }
+  @keyframes foil-drift { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
+  @keyframes foil-gleam { from { background-position: 130% 130%; } to { background-position: -30% -30%; } }
+  @media (prefers-reduced-motion: reduce) {
+    .foil-sheen, .foil-sheen::after { animation: none; }
+  }
+  .card.foiled img, .card.foiled .noimg { box-shadow: 0 0 0 2px #9ecfdd, 0 6px 18px rgba(158,207,221,.35); }
   .owned-badge {
     position: absolute; top: 6px; left: 6px;
     padding: 2px 8px;
     border-radius: 10px;
-    background: rgba(19,18,16,.85);
+    background: var(--overlay);
     border: 1px solid var(--border-gold);
     color: var(--gold-bright);
     font-size: 12.5px;
@@ -493,7 +548,7 @@
   .pick-badge {
     position: absolute; top: 5px; right: 5px;
     min-width: 22px; height: 22px; padding: 0 5px; border-radius: 11px;
-    background: rgba(19,18,16,.85); border: 1px solid var(--border);
+    background: var(--overlay); border: 1px solid var(--border);
     color: var(--parchment-dim); font-size: 13px;
     display: flex; align-items: center; justify-content: center;
   }
@@ -545,6 +600,7 @@
   <div class="nav-tools">
     <button class="tool-btn" onclick="exportData()" title="Download a backup of your collection">Export</button>
     <button class="tool-btn" id="btn-import" onclick="document.getElementById('import-file').click()" title="Restore a JSON backup or import a ManaBox CSV">Import</button>
+    <button class="tool-btn" id="btn-theme" onclick="toggleTheme()" title="Switch between night and day">☀</button>
     <button class="tool-btn" id="sync-chip" onclick="openAuth()" title="Collection sync — owner sign-in">…</button>
     <input type="file" id="import-file" accept=".json,.csv" onchange="importFile(this)">
   </div>
@@ -1431,6 +1487,22 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('picker-modal').classList.contains('show')) closePicker();
   }
 });
+
+/* ---- Day / night theme (a device preference, not collection data) ---- */
+const THEME_KEY = 'hob_theme_v1';
+function applyTheme() {
+  const t = localStorage.getItem(THEME_KEY) || 'dark';
+  document.body.classList.toggle('light', t === 'light');
+  const b = document.getElementById('btn-theme');
+  b.textContent = t === 'light' ? '☾' : '☀';
+  b.title = t === 'light' ? 'Back to the night theme' : 'Day theme — after Tolkien\'s Hobbit cover';
+}
+function toggleTheme() {
+  const t = (localStorage.getItem(THEME_KEY) || 'dark') === 'light' ? 'dark' : 'light';
+  localStorage.setItem(THEME_KEY, t);
+  applyTheme();
+}
+applyTheme();
 
 document.body.classList.toggle('readonly', !token);
 setSyncStatus(token ? (dirty ? 'pending' : 'saved') : 'viewonly');

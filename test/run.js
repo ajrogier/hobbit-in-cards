@@ -43,6 +43,14 @@ const mock = require('./mock.js');
   await page.click('.card[data-id="mock-14"]');  // Smaug
   console.log('owned after toggles:', await page.textContent('#stat-owned'));
 
+  // Day theme toggles on and survives reload (device preference)
+  await page.click('#btn-theme');
+  console.log('light theme applied (expect true):', await page.evaluate(() => document.body.classList.contains('light')));
+  await page.reload();
+  await page.waitForSelector('#view-tracker .card');
+  console.log('light theme after reload (expect true):', await page.evaluate(() => document.body.classList.contains('light')));
+  await page.click('#btn-theme');   // back to night for the rest of the run
+
   // Quick foil from the card pill; sheen + badge should appear
   await page.locator('.card[data-id="mock-14"] .qty-pill .foil').click();
   console.log('foil sheen shown (expect 1):', await page.locator('.card[data-id="mock-14"] .foil-sheen').count());
