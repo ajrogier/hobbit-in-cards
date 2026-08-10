@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T13:07:56.998Z",
+  "saved_at": "2026-08-10T13:12:54.370Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1389,7 +1389,12 @@
         "id": "smsn1edkm549ov",
         "title": "Riddles in the Dark",
         "blurb": "",
-        "cards": [],
+        "cards": [
+          {
+            "cardId": "a1142fa1-b861-4876-aa48-402af35aaa63",
+            "note": ""
+          }
+        ],
         "subs": []
       },
       {
