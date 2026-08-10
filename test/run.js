@@ -229,6 +229,12 @@ const mock = require('./mock.js');
   await page.locator('#view-story .card[data-id="mock-14"]').first().click();
   console.log('unmarked card zooms without flavor (expect true / 0):',
     await page.locator('#zoom-modal.show').isVisible(), '/', await page.locator('.zoom-flavor').count());
+  console.log('art crop shown first (expect 1):', await page.locator('.zoom-art').count());
+  await page.locator('.zoom-art').click();
+  console.log('tap flips to full card (expect 0 / 1):',
+    await page.locator('.zoom-art').count(), '/', await page.locator('#zoom-body img').count());
+  await page.locator('#zoom-body img').click();
+  console.log('tap flips back to art (expect 1):', await page.locator('.zoom-art').count());
   await page.keyboard.press('Escape');
   await page.locator('.passage .p-card').click();
   console.log('passage mini card zooms, no edit dialog (expect true / false / 1):',

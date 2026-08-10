@@ -555,6 +555,13 @@
     font-style: italic; font-size: 16.5px; line-height: 1.6; color: #e8dcc0;
   }
   .zoom-flavor::before { content: '❝ '; color: #c9a24b; }
+  .zoom-art {
+    width: min(92vw, 560px); max-height: 62vh; object-fit: contain;
+    border-radius: 10px; cursor: pointer;
+    box-shadow: 0 24px 70px rgba(0,0,0,.75), 0 0 0 1px rgba(201,162,75,.35);
+  }
+  .zoom img { cursor: pointer; }
+  .zoom-hint { font-size: 12.5px; color: rgba(232,220,192,.55); margin-top: 9px; }
   .entry-move.on {
     border-color: var(--border-gold); color: var(--gold-bright);
     background: rgba(201,162,75,.18);
@@ -831,7 +838,7 @@
 /* ================= Data & state ================= */
 const SET_CODE = 'hob';
 const TOKEN_SET_CODE = 'thob';   // the set's token cards
-const CACHE_KEY = 'hob_cards_v2';  // v2: includes tokens
+const CACHE_KEY = 'hob_cards_v3';  // v3: includes art crops
 const CACHE_HOURS = 24;
 const OWNED_KEY = 'hob_owned_v1';
 const STORY_KEY = 'hob_story_v3';
@@ -966,6 +973,7 @@ function trimCard(c, setCode) {
     flavor: (c.flavor_text || (c.card_faces ? c.card_faces.map(f=>f.flavor_text||'').join(' ') : '')) || '',
     oracle: (c.oracle_text || (c.card_faces ? c.card_faces.map(f=>f.oracle_text||'').join(' ') : '')) || '',
     img: face.image_uris ? face.image_uris.normal : null,
+    art: face.image_uris ? face.image_uris.art_crop : null,
     uri: c.scryfall_uri,
   };
 }
@@ -1531,17 +1539,31 @@ function dragCancel() {
 
 /* ---- Read-mode lightbox: the card, big — flavor only where it's been marked
    as belonging, so a closer look never runs ahead of the story. ---- */
+let zoomState = null;
 function showZoom(c, note, showFlavor) {
+  zoomState = { c, note, showFlavor, full: !c.art };   // no art crop -> straight to the card
+  renderZoom();
+  document.getElementById('zoom-modal').classList.add('show');
+}
+function renderZoom() {
+  const { c, note, showFlavor, full } = zoomState;
+  const flippable = c.art && c.img;
+  const flip = flippable ? `onclick="event.stopPropagation();flipZoom()"` : '';
+  const imgHTML = !full && c.art
+    ? `<img class="zoom-art" draggable="false" src="${c.art}" alt="${esc(c.name)}" ${flip} title="Tap for the full card">`
+    : c.img
+      ? `<img draggable="false" src="${c.img}" alt="${esc(c.name)}" ${flip} title="${flippable ? 'Tap for the art' : esc(c.name)}">`
+      : `<div class="zoom-noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`;
   document.getElementById('zoom-body').innerHTML = `
-    ${c.img ? `<img draggable="false" src="${c.img}" alt="${esc(c.name)}">`
-            : `<div class="zoom-noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`}
+    ${imgHTML}
     <div class="zoom-caption">
       <div class="zoom-name">${esc(c.name)}</div>
       ${note ? `<div class="zoom-note">${esc(note)}</div>` : ''}
       ${showFlavor && c.flavor ? `<blockquote class="zoom-flavor">${esc(c.flavor)}</blockquote>` : ''}
+      ${flippable ? `<div class="zoom-hint">${full ? 'tap the card for the art' : 'tap the art for the full card'}</div>` : ''}
     </div>`;
-  document.getElementById('zoom-modal').classList.add('show');
 }
+function flipZoom() { if (zoomState) { zoomState.full = !zoomState.full; renderZoom(); } }
 function openZoom(secId, subId, i) {
   const t = findTarget(secId, subId || null);
   const e = t && t.cards[i];

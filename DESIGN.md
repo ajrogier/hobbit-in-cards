@@ -113,9 +113,12 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   image-drag eats the pointer stream). On touch, the ⠿ handle (touch-action: none) drags
   immediately; the card body needs a ~300ms hold, which real fingers often lose to scroll.
 - `removeEntry` — the ✕ under a card drops that one placement.
-- **Lightbox** (`openZoom`/`showZoom`) — in read mode (and for visitors) tapping a card
-  shows it big with its placement note; flavor text appears only if that placement's ❝
-  toggle (edit mode, next to ‹ › ✕) marked it relevant. A marked placement also renders
+- **Lightbox** (`openZoom`/`showZoom`/`renderZoom`) — in read mode (and for visitors)
+  tapping a card opens the ART CROP as an illustrated plate (Scryfall art_crop, cached as
+  `art` in the card trim; cache key v3), with name, placement note, and — only if that
+  placement's ❝ toggle (edit mode, next to ‹ › ✕) marked it relevant — the flavor text.
+  Tapping the image flips between the art plate and the full card (rules frame) and back;
+  cards without an art crop fall straight to the full card. A marked placement also renders
   the flavor line inline under the card in the story view — instant feedback when
   toggling, and part of the story in read mode. Edit-mode taps keep the manager dialog;
   a passage's mini card zooms in read mode (its quote is already on the page).

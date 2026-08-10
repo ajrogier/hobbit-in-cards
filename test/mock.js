@@ -26,7 +26,10 @@ const names = [
 const artFor = cn => cn === '14'
   ? { normal: 'data:image/svg+xml;utf8,' + encodeURIComponent(
       '<svg xmlns="http://www.w3.org/2000/svg" width="488" height="680">' +
-      '<rect width="488" height="680" fill="#7a2e1e"/><circle cx="244" cy="300" r="150" fill="#d0722e"/></svg>') }
+      '<rect width="488" height="680" fill="#7a2e1e"/><circle cx="244" cy="300" r="150" fill="#d0722e"/></svg>'),
+      art_crop: 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="626" height="457">' +
+      '<rect width="626" height="457" fill="#5a1e12"/><circle cx="313" cy="228" r="170" fill="#e0863e"/></svg>') }
   : null; // most cards keep placeholders; one real <img> exercises native-drag suppression
 const data = names.map(([cn, name, rarity, type_line, flavor]) => ({
   id: 'mock-' + cn,
