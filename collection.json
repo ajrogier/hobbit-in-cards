@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T13:50:06.186Z",
+  "saved_at": "2026-08-10T13:51:31.580Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1506,13 +1506,13 @@
             "fl": true
           },
           {
+            "cardId": "12c8f2cc-ac9d-4cf6-9025-efe366b4e07f",
+            "note": ""
+          },
+          {
             "cardId": "3feca644-5f65-4477-bbc8-d505cec6f3a5",
             "note": "",
             "fl": true
-          },
-          {
-            "cardId": "12c8f2cc-ac9d-4cf6-9025-efe366b4e07f",
-            "note": ""
           }
         ],
         "subs": []
@@ -1521,7 +1521,12 @@
         "id": "smsn1ervcta9uv",
         "title": "Queer Lodgings",
         "blurb": "",
-        "cards": [],
+        "cards": [
+          {
+            "cardId": "12c8f2cc-ac9d-4cf6-9025-efe366b4e07f",
+            "note": ""
+          }
+        ],
         "subs": []
       },
       {
