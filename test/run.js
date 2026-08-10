@@ -184,6 +184,13 @@ const mock = require('./mock.js');
   console.log('quote consumes no copies — uncovered stays 0 (expect 0):',
     await page.locator('#view-story .card.uncovered').count());
 
+  // Quote Smaug as well: his mock has art, so this passage shows a mini card
+  await page.locator('#view-story .card[data-id="mock-14"]').first().click();
+  await page.locator('#modal button', { hasText: 'Quote here' }).click();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
+  console.log('passage mini card present (expect 1):', await page.locator('.passage .p-card').count());
+
   // Free-text passage via the ❝ tile, then edit-mode removal
   answers.push('And so the company gathered, thirteen dwarves and a burglar.');
   await page.locator('.chapter .add-card', { hasText: 'Add text' }).first().click();
@@ -219,6 +226,12 @@ const mock = require('./mock.js');
   console.log('unmarked card zooms without flavor (expect true / 0):',
     await page.locator('#zoom-modal.show').isVisible(), '/', await page.locator('.zoom-flavor').count());
   await page.keyboard.press('Escape');
+  await page.locator('.passage .p-card').click();
+  console.log('passage mini card zooms, no edit dialog (expect true / false / 1):',
+    await page.locator('#zoom-modal.show').isVisible(), '/',
+    await page.locator('#modal.show').isVisible(), '/',
+    await page.locator('.zoom-flavor').count());
+  await page.keyboard.press('Escape');
   await page.click('.story-edit-toggle');
   console.log('edit mode restores controls (expect >0):', await page.locator('.sec-controls').count() > 0);
 
@@ -243,7 +256,7 @@ const mock = require('./mock.js');
   const pushed = JSON.parse(Buffer.from(gh.doc.content, 'base64').toString('utf8'));
   console.log('synced doc owned count (expect 2):', Object.values(pushed.owned).filter(o => o.q + o.f + o.s > 0).length);
   const secList = pushed.story.sections[0].cards;
-  console.log('synced doc story (expect 1 placement + 1 passage / 1 sub card):',
+  console.log('synced doc story (expect 1 placement + 2 passages / 1 sub card):',
     secList.filter(e => e.text === undefined).length, '+',
     secList.filter(e => e.text !== undefined).length, '/',
     pushed.story.sections[0].subs[0].cards.length);

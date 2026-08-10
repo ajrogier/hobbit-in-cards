@@ -1379,7 +1379,7 @@ function passageHTML(e, byId, loc) {
   return `<div class="passage"${locAttrs}>
     ${ctl}
     <blockquote>${esc(e.text)}${c ? `<div class="p-attr">— ${esc(c.name)}</div>` : ''}</blockquote>
-    ${c && c.img ? `<div class="p-card" onclick="openModal('${c.id}')" title="${esc(c.name)}"><img draggable="false" loading="lazy" src="${c.img}" alt="${esc(c.name)}"></div>` : ''}
+    ${c && c.img ? `<div class="p-card" onclick="${loc ? `openModal('${c.id}')` : `openZoomCard('${c.id}')`}" title="${esc(c.name)}"><img draggable="false" loading="lazy" src="${c.img}" alt="${esc(c.name)}"></div>` : ''}
   </div>`;
 }
 function addPassage(secId, subId) {
@@ -1512,19 +1512,26 @@ function dragCancel() {
 
 /* ---- Read-mode lightbox: the card, big — flavor only where it's been marked
    as belonging, so a closer look never runs ahead of the story. ---- */
+function showZoom(c, note, showFlavor) {
+  document.getElementById('zoom-body').innerHTML = `
+    ${c.img ? `<img draggable="false" src="${c.img}" alt="${esc(c.name)}">`
+            : `<div class="zoom-noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`}
+    <div class="zoom-name">${esc(c.name)}</div>
+    ${note ? `<div class="zoom-note">${esc(note)}</div>` : ''}
+    ${showFlavor && c.flavor ? `<blockquote class="zoom-flavor">${esc(c.flavor)}</blockquote>` : ''}`;
+  document.getElementById('zoom-modal').classList.add('show');
+}
 function openZoom(secId, subId, i) {
   const t = findTarget(secId, subId || null);
   const e = t && t.cards[i];
   if (!e || e.text !== undefined) return;
   const c = cards.find(x => x.id === e.cardId);
-  if (!c) return;
-  document.getElementById('zoom-body').innerHTML = `
-    ${c.img ? `<img draggable="false" src="${c.img}" alt="${esc(c.name)}">`
-            : `<div class="zoom-noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`}
-    <div class="zoom-name">${esc(c.name)}</div>
-    ${e.note ? `<div class="zoom-note">${esc(e.note)}</div>` : ''}
-    ${e.fl && c.flavor ? `<blockquote class="zoom-flavor">${esc(c.flavor)}</blockquote>` : ''}`;
-  document.getElementById('zoom-modal').classList.add('show');
+  if (c) showZoom(c, e.note, !!e.fl);
+}
+/* A passage's mini card: its quote is already on the page, so the flavor is no spoiler */
+function openZoomCard(cardId) {
+  const c = cards.find(x => x.id === cardId);
+  if (c) showZoom(c, '', true);
 }
 function closeZoom() { document.getElementById('zoom-modal').classList.remove('show'); }
 
