@@ -27,6 +27,11 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   Visitors see the collection read-only; editing requires the owner sign-in (below).
 - **Export** downloads a JSON backup; **Import** restores it — and also accepts a
   **ManaBox CSV export**, so you can scan cards with your phone and import them here.
+- **The Book** — a reader tab beside the tale. Load the book's text once per device
+  (plain .txt with "Chapter …" headings, or a book.json with page numbers): it is stored
+  in that browser only — never committed, synced, or served, because the book is
+  copyrighted and this site is public. Search any line to find its chapter (and page,
+  with a json book); every card dialog gets a "find the flavor line in the book" jump.
 - **Settings (⚙)** — a small menu holding the per-device preferences: day/night theme
   (day is styled after Tolkien's original Hobbit cover — cream sky, ink linework, forest
   greens, red-sun accent), foil shimmer (subtle static wash, or an animated gleam sweep),

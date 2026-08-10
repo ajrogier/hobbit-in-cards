@@ -95,10 +95,10 @@ const mock = require('./mock.js');
   page.on('dialog', d => d.type() === 'prompt' ? d.accept(answers.shift() || '') : d.accept());
   await page.click('#nav-story');
   await page.waitForSelector('.story-empty');
-  console.log('clean slate (expect 1):', await page.locator('.story-empty').count());
+  console.log('clean slate (expect 1):', await page.locator('#view-story .story-empty').count());
 
   answers.push('An Unexpected Party');
-  await page.click('.story-empty .tool-btn');
+  await page.click('#view-story .story-empty .tool-btn');
   await page.waitForSelector('.chapter');
   console.log('section title:', (await page.textContent('.ch-title')).trim());
   console.log('section numeral (expect I):', (await page.textContent('.ch-num')).trim());
@@ -178,6 +178,26 @@ const mock = require('./mock.js');
     await page.locator('.subsection .grid .card[data-id="mock-14"]').count(), '/',
     await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count());
 
+  // The Book: device-local reader — import a txt, chapters parsed, search finds chapter
+  await page.click('#nav-book');
+  console.log('book starts empty (expect true):', await page.locator('#book-empty').isVisible());
+  await page.setInputFiles('#book-file', path.resolve(__dirname, 'book.txt'));
+  await page.waitForSelector('#book-ui', { state: 'visible' });
+  console.log('book chapters parsed (expect 2):', await page.locator('#book-chnav option').count());
+  await page.fill('#book-search', 'pocketses');
+  console.log('book search hits (expect 1, in Chapter V):',
+    await page.locator('.book-hit').count(), '/',
+    (await page.locator('.book-hit .where').textContent()).trim());
+  await page.locator('.book-hit').click();
+  console.log('jump shows chapter (expect Chapter V):', (await page.textContent('#book-text h2')).trim());
+
+  // From a card's dialog straight to its flavor line in the book
+  await page.click('#nav-tracker');
+  await page.locator('#tracker-grid .card[data-id="mock-8"] .qty-pill .more').click();
+  await page.locator('#modal button', { hasText: 'Find the flavor line' }).click();
+  console.log('flavor jump lands in book with hits (expect true / 1):',
+    await page.locator('#view-book').isVisible(), '/', await page.locator('.book-hit').count());
+  
   // Sync: wait for the debounced commit of the edits above, then verify payload
   await page.waitForFunction(() =>
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
@@ -187,6 +207,7 @@ const mock = require('./mock.js');
     pushed.story.sections[0].title, '/', pushed.story.sections[0].cards.length, '/',
     pushed.story.sections[0].subs[0].cards.length);
   console.log('PUT commits made:', gh.puts > 0);
+  console.log('book never synced to repo (expect true):', !('book' in pushed) && !JSON.stringify(pushed).includes('oozy smell'));
 
   // Persistence: reload, check owned + story survived (now served from the mock repo)
   await page.reload();

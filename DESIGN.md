@@ -99,6 +99,15 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   because copies cover placements in reading order.
 - `removeEntry` — the ✕ under a card drops that one placement.
 
+## 3b. The Book (device-local reader)
+
+`hob_book_v1` in localStorage: `{ chapters: [ { title, paras: [ { t, page? } ] } ] }`.
+Deliberately **not** part of collection.json and never pushed: the text is copyrighted
+and the repo/site are public, so each device imports its own copy (txt parsed by
+"Chapter …" headings; json may carry per-paragraph page numbers). Search normalizes
+curly quotes and whitespace; results jump to the paragraph with a highlight flash.
+`bookFindFlavor(cardId)` probes the first ~48 chars of a card's flavor text.
+
 ## 4. UI map
 
 - `cardHTML(card, appr?)` — renders one card. With an `appr` argument (story view) it adds the
