@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T14:07:02.902Z",
+  "saved_at": "2026-08-10T14:07:07.387Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1560,11 +1560,13 @@
           },
           {
             "cardId": "d1a1e520-1fe2-4529-8afb-c187bb80da3c",
-            "note": ""
+            "note": "",
+            "fl": true
           },
           {
             "cardId": "8a50858a-33b5-4c45-9c31-5956ae5a33a6",
-            "note": ""
+            "note": "",
+            "fl": true
           },
           {
             "cardId": "50202288-f433-4b56-8f60-349bda7b4f6b",
