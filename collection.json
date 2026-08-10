@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T09:36:17.480Z",
+  "saved_at": "2026-08-10T09:36:29.512Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1167,6 +1167,13 @@
       {
         "id": "smsn1e4bqsth50",
         "title": "Over Hill and Under Hill",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1edkm549ov",
+        "title": "Riddles in the Dark",
         "blurb": "",
         "cards": [],
         "subs": []
