@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T10:04:32.283Z",
+  "saved_at": "2026-08-10T10:04:38.203Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1132,6 +1132,10 @@
             "note": ""
           },
           {
+            "cardId": "1e4408fa-8037-42f1-989e-2da84867f76c",
+            "note": ""
+          },
+          {
             "text": "Fight wild Were-worms in the Last Desert\n—Expression meaning \"an impossible task\"",
             "cardId": "fc12c22a-11ff-4fb0-bc42-dd8490b8efb7"
           },
@@ -1161,10 +1165,6 @@
           },
           {
             "cardId": "c49d378e-9549-4320-b3c6-1aeb216d1e98",
-            "note": ""
-          },
-          {
-            "cardId": "1e4408fa-8037-42f1-989e-2da84867f76c",
             "note": ""
           }
         ],
