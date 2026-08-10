@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T16:56:35.797Z",
+  "saved_at": "2026-08-10T16:57:43.951Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1630,6 +1630,10 @@
           {
             "text": "\"Well, here is Mirkwood—the greatest of the forests of the northern world. I hope you like the look of it.\"\n—Gandalf",
             "cardId": "880adfc8-69cf-4062-a804-e65b6cb6056d"
+          },
+          {
+            "cardId": "880adfc8-69cf-4062-a804-e65b6cb6056d",
+            "note": ""
           }
         ],
         "subs": []
@@ -1638,12 +1642,7 @@
         "id": "smsn1ewiczviox",
         "title": "Flies and Spiders",
         "blurb": "",
-        "cards": [
-          {
-            "cardId": "880adfc8-69cf-4062-a804-e65b6cb6056d",
-            "note": ""
-          }
-        ],
+        "cards": [],
         "subs": []
       },
       {
