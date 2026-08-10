@@ -67,7 +67,11 @@ settings     (key hob_settings_v1, synced inside collection.json)
 story        (key hob_story_v3, synced inside collection.json)
   { sections: [ { id, title, blurb, cards: [entry], subs: [ {id, title, blurb, cards: [entry]} ] } ] }
   — entry is one of two kinds, discriminated by the presence of .text:
-      placement { cardId, note }   — a card in the display; consumes copies for coverage
+      placement { cardId, note, fl? } — a card in the display; consumes copies for coverage.
+                                     fl marks the flavor text as RELEVANT AT THIS PLACEMENT:
+                                     the read-mode lightbox shows flavor only where fl is set,
+                                     so a closer look never runs ahead of the story (a dwarf
+                                     shown in ch. I may carry flavor quoting his death).
       passage   { text, cardId? }  — story prose between the cards, full-width, quote-styled;
                                      optional cardId shows attribution + a mini card, but
                                      passages NEVER consume copies or count in progress
@@ -109,6 +113,9 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   image-drag eats the pointer stream). On touch, the ⠿ handle (touch-action: none) drags
   immediately; the card body needs a ~300ms hold, which real fingers often lose to scroll.
 - `removeEntry` — the ✕ under a card drops that one placement.
+- **Lightbox** (`openZoom`) — in read mode (and for visitors) tapping a card shows it big
+  with its placement note; flavor text appears only if that placement's ❝ toggle (edit
+  mode, next to ‹ › ✕) marked it relevant. Edit-mode taps keep opening the manager dialog.
 - **Passages** — the ❝ Add-text tile inserts free narration (prompt); the card dialog's
   "❝ Quote here" inserts the card's flavor text as a passage linked to the card. Passages
   share the entry list, so they reorder, drag, and delete like cards (`placementsIn()`

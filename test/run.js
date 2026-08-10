@@ -131,11 +131,11 @@ const mock = require('./mock.js');
     await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').count());
 
   // Reorder within the section: move Gollum (2nd) before Smaug
-  await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move').first().click();
+  await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move', { hasText: '‹' }).click();
   console.log('first card after reorder (expect mock-8):',
     await page.locator('.chapter .grid').first().locator('.card:not(.add-card)').first().getAttribute('data-id'));
   console.log('start-of-list ‹ disabled (expect true):',
-    await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move').first().isDisabled());
+    await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move', { hasText: '‹' }).isDisabled());
 
   // Second placement of Gollum in the subsection -> 1 copy, 2 placements -> amber
   await page.locator('.subsection .add-card', { hasText: 'Add cards' }).click();
@@ -186,6 +186,11 @@ const mock = require('./mock.js');
   console.log('passage removed (expect 0):',
     await page.locator('#view-story .passage', { hasText: 'company gathered' }).count());
 
+  // Mark flavor as relevant at Gollum's placement (the ❝ toggle), then go read
+  await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move.fl').click();
+  console.log('flavor toggle lit (expect true):',
+    await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move.fl.on').count() === 1);
+
   // Read/edit toggle: read mode hides all authoring chrome, edit brings it back
   await page.click('.story-edit-toggle');
   console.log('read mode hides controls (expect 0 / 0 / 0):',
@@ -194,6 +199,17 @@ const mock = require('./mock.js');
     await page.locator('.entry-del').count());
   console.log('read mode hides count badges (expect 0 visible):',
     await page.locator('#view-story .owned-badge:visible').count());
+
+  // Read-mode tap = lightbox; flavor shows only where it was marked with ❝
+  await page.locator('#view-story .card[data-id="mock-8"]').first().click();
+  console.log('marked card zooms with flavor (expect true / 1):',
+    await page.locator('#zoom-modal.show').isVisible(), '/',
+    await page.locator('.zoom-flavor', { hasText: 'pocketses' }).count());
+  await page.keyboard.press('Escape');
+  await page.locator('#view-story .card[data-id="mock-14"]').first().click();
+  console.log('unmarked card zooms without flavor (expect true / 0):',
+    await page.locator('#zoom-modal.show').isVisible(), '/', await page.locator('.zoom-flavor').count());
+  await page.keyboard.press('Escape');
   await page.click('.story-edit-toggle');
   console.log('edit mode restores controls (expect >0):', await page.locator('.sec-controls').count() > 0);
 
@@ -269,6 +285,11 @@ const mock = require('./mock.js');
   await viewer.click('#nav-story');
   await viewer.waitForSelector('.chapter');
   console.log('viewer sees the tale (expect An Unexpected Party):', (await viewer.textContent('.ch-title')).trim());
+  await viewer.locator('#view-story .card[data-id="mock-8"]').first().click();
+  console.log('viewer tale tap opens lightbox with flavor (expect true / 1):',
+    await viewer.locator('#zoom-modal.show').isVisible(), '/',
+    await viewer.locator('.zoom-flavor', { hasText: 'pocketses' }).count());
+  await viewer.keyboard.press('Escape');
   console.log('viewer has no edit controls (expect 0 / 0):',
     await viewer.locator('.sec-controls').count(), '/', await viewer.locator('.add-card').count());
   await viewerCtx.close();

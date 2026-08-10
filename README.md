@@ -18,6 +18,10 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   everywhere!), each with a free note ("finds the ring"). Manage placements from the
   section (tap to add/remove in the picker) or from the card dialog (the **⋯** button,
   or just tapping the card in the Tale view).
+- **A closer look, spoiler-safe** — in the tale's read view, tapping a card opens it big
+  with its note; the flavor text shows only where you've marked it relevant to that point
+  of the story (the ❝ toggle on each placement in edit mode) — so a dwarf introduced in
+  chapter one doesn't quote his own ending.
 - **Passages** — story text between the cards: free narration via the ❝ tile, or one tap
   in a card's dialog quotes its flavor text into the tale, attributed and showing a small
   copy of the card — without counting as a placement, so quoting Ori's line doesn't

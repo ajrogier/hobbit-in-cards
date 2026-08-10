@@ -522,6 +522,32 @@
   /* Read mode is the book: no ledger chrome on the cards */
   #view-story.story-reading .owned-badge, #view-story.story-reading .qty-pill { display: none; }
   .card[data-sec] { cursor: grab; }
+  /* Read-mode lightbox: the card, big, with only what belongs at this point */
+  .modal.zoom {
+    background: none; border: none; box-shadow: none;
+    max-width: 460px; width: auto; padding: 0; text-align: center;
+    overflow: visible; cursor: zoom-out;
+  }
+  .zoom img {
+    width: min(88vw, 440px); max-height: 70vh; object-fit: contain;
+    border-radius: 4.75% / 3.5%;
+    box-shadow: 0 24px 70px rgba(0,0,0,.75);
+  }
+  .zoom .zoom-noimg {
+    width: min(88vw, 440px); aspect-ratio: 488/680;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; border: 1px solid var(--border); border-radius: 4.75% / 3.5%;
+    background: var(--bg-card); color: var(--parchment-dim); font-size: 17px;
+  }
+  .zoom-name { font-family: 'Cinzel', serif; font-size: 19px; color: var(--parchment); margin-top: 16px; }
+  .zoom-note { color: var(--gold-bright); font-size: 15px; font-style: italic; margin-top: 7px; }
+  .zoom-flavor {
+    margin: 12px auto 0; max-width: 400px;
+    font-style: italic; font-size: 17px; line-height: 1.65; color: var(--parchment);
+  }
+  .zoom-flavor::before { content: '❝ '; color: var(--gold); }
+  .entry-move.on { border-color: var(--border-gold); color: var(--gold-bright); }
+
   .passage {
     grid-column: 1 / -1;
     display: flex; gap: 16px; align-items: center;
@@ -737,6 +763,10 @@
     </div>
     <div class="auth-actions"><button class="tool-btn" onclick="closeSettings()">Done</button></div>
   </div>
+</div>
+
+<div class="modal-wrap" id="zoom-modal" onclick="closeZoom()">
+  <div class="modal zoom" id="zoom-body"></div>
 </div>
 
 <div class="modal-wrap" id="picker-modal" onclick="if(event.target===this)closePicker()">
@@ -1154,12 +1184,16 @@ function cardHTML(c, appr) {
       ${appr.loc && canEdit() ? `<span class="drag-handle" title="Drag to move this card">⠿</span>` : ''}
       ${appr.note ? `<span class="tag-pill note">${esc(appr.note)}</span>` : ''}
       ${isOwned(c.id) && !appr.covered ? '<span class="need-copy">needs another copy</span>' : ''}
+      ${appr.loc && canEdit() && c.flavor ? `
+        <button class="entry-move fl ${appr.fl ? 'on' : ''}" onclick="event.stopPropagation();toggleFlavorHere('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i})" title="${appr.fl ? 'Flavor text shows when this card is viewed here' : 'Show the flavor text when this card is viewed here'}">❝</button>` : ''}
       ${appr.loc && canEdit() ? `
         <button class="entry-move" onclick="event.stopPropagation();moveEntry('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i},-1)" title="Move earlier in this part" ${appr.loc.i === 0 ? 'disabled' : ''}>‹</button>
         <button class="entry-move" onclick="event.stopPropagation();moveEntry('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i},1)" title="Move later in this part" ${appr.loc.i >= appr.loc.len - 1 ? 'disabled' : ''}>›</button>
         <button class="entry-del" onclick="event.stopPropagation();removeEntry('${appr.loc.sec}','${appr.loc.sub || ''}',${appr.loc.i})" title="Remove from this part of the tale">✕</button>` : ''}
     </div>` : '';
-  const tapAction = appr ? `openModal('${c.id}')` : `toggleCard('${c.id}')`;
+  const tapAction = !appr ? `toggleCard('${c.id}')`
+    : appr.zoom ? `openZoom('${appr.zoom.sec}','${appr.zoom.sub || ''}',${appr.zoom.i})`
+    : `openModal('${c.id}')`;
   const locAttrs = appr && appr.loc
     ? ` data-sec="${appr.loc.sec}" data-sub="${appr.loc.sub || ''}" data-i="${appr.loc.i}"` : '';
   const tapHint = !canEdit() ? 'tap for details'
@@ -1220,7 +1254,8 @@ function renderStory() {
         if (e.text !== undefined) return passageHTML(e, byId, loc);
         const c = byId[e.cardId];
         if (!c) return '';
-        return cardHTML(c, { note: e.note, covered: flags.get(e), loc });
+        return cardHTML(c, { note: e.note, covered: flags.get(e), loc, fl: !!e.fl,
+          zoom: editing ? null : { sec: secId, sub: subId, i } });
       }).join('');
     const add = editing ? `<div class="card add-card" onclick="openPicker('${secId}','${subId || ''}')" title="Add cards from the set">
         <div class="noimg add-tile"><span class="add-plus">+</span><span>Add cards</span></div>
@@ -1472,6 +1507,35 @@ function dragCancel() {
   document.removeEventListener('pointercancel', dragCancel);
   drag = null;
   if (dirtyDom) refresh();         // re-render from data: DOM experiments discarded
+}
+
+/* ---- Read-mode lightbox: the card, big — flavor only where it's been marked
+   as belonging, so a closer look never runs ahead of the story. ---- */
+function openZoom(secId, subId, i) {
+  const t = findTarget(secId, subId || null);
+  const e = t && t.cards[i];
+  if (!e || e.text !== undefined) return;
+  const c = cards.find(x => x.id === e.cardId);
+  if (!c) return;
+  document.getElementById('zoom-body').innerHTML = `
+    ${c.img ? `<img draggable="false" src="${c.img}" alt="${esc(c.name)}">`
+            : `<div class="zoom-noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`}
+    <div class="zoom-name">${esc(c.name)}</div>
+    ${e.note ? `<div class="zoom-note">${esc(e.note)}</div>` : ''}
+    ${e.fl && c.flavor ? `<blockquote class="zoom-flavor">${esc(c.flavor)}</blockquote>` : ''}`;
+  document.getElementById('zoom-modal').classList.add('show');
+}
+function closeZoom() { document.getElementById('zoom-modal').classList.remove('show'); }
+
+function toggleFlavorHere(secId, subId, i) {
+  if (guard()) return;
+  const t = findTarget(secId, subId || null);
+  const e = t && t.cards[i];
+  if (!e || e.text !== undefined) return;
+  if (e.fl) delete e.fl; else e.fl = true;
+  persist(); refresh();
+  toast(e.fl ? 'The flavor text now shows when this card is viewed here.'
+             : 'The flavor text stays hidden at this point of the tale.');
 }
 
 function removeEntry(secId, subId, i) {
@@ -1787,7 +1851,7 @@ function toast(msg) {
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    closeModal(); closeAuth(); closeSettings();
+    closeModal(); closeAuth(); closeSettings(); closeZoom();
     if (document.getElementById('picker-modal').classList.contains('show')) closePicker();
   }
 });
