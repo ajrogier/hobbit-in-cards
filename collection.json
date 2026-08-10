@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T13:01:40.230Z",
+  "saved_at": "2026-08-10T13:02:41.264Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1295,10 +1295,6 @@
           {
             "cardId": "2e2028b1-34c0-40b6-8f65-79f79a279996",
             "note": ""
-          },
-          {
-            "text": "It was deep, deep dark, such as only Goblins that have taken to living in the heart of the mountain can see through.",
-            "cardId": "07bfc803-e11b-47ab-9f25-0ace7e174200"
           },
           {
             "cardId": "d76df9d0-56cf-4351-a5e8-e6ae6fc791d1",
