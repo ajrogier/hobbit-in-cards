@@ -539,13 +539,22 @@
     gap: 10px; border: 1px solid var(--border); border-radius: 4.75% / 3.5%;
     background: var(--bg-card); color: var(--parchment-dim); font-size: 17px;
   }
-  .zoom-name { font-family: 'Cinzel', serif; font-size: 19px; color: var(--parchment); margin-top: 16px; }
-  .zoom-note { color: var(--gold-bright); font-size: 15px; font-style: italic; margin-top: 7px; }
-  .zoom-flavor {
-    margin: 12px auto 0; max-width: 400px;
-    font-style: italic; font-size: 17px; line-height: 1.65; color: var(--parchment);
+  #zoom-modal { background: rgba(0,0,0,.8); }
+  .zoom-caption {
+    display: inline-block; margin-top: 14px;
+    padding: 12px 20px 14px; border-radius: 12px;
+    background: rgba(19,18,16,.92);
+    border: 1px solid rgba(201,162,75,.4);
+    max-width: min(88vw, 440px);
   }
-  .zoom-flavor::before { content: '❝ '; color: var(--gold); }
+  /* The backdrop is dark in every theme, so the caption keeps its own palette */
+  .zoom-name { font-family: 'Cinzel', serif; font-size: 18px; color: #e8dcc0; }
+  .zoom-note { color: #e6c36a; font-size: 15px; font-style: italic; margin-top: 6px; }
+  .zoom-flavor {
+    margin: 10px auto 0; max-width: 380px;
+    font-style: italic; font-size: 16.5px; line-height: 1.6; color: #e8dcc0;
+  }
+  .zoom-flavor::before { content: '❝ '; color: #c9a24b; }
   .entry-move.on {
     border-color: var(--border-gold); color: var(--gold-bright);
     background: rgba(201,162,75,.18);
@@ -1526,9 +1535,11 @@ function showZoom(c, note, showFlavor) {
   document.getElementById('zoom-body').innerHTML = `
     ${c.img ? `<img draggable="false" src="${c.img}" alt="${esc(c.name)}">`
             : `<div class="zoom-noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`}
-    <div class="zoom-name">${esc(c.name)}</div>
-    ${note ? `<div class="zoom-note">${esc(note)}</div>` : ''}
-    ${showFlavor && c.flavor ? `<blockquote class="zoom-flavor">${esc(c.flavor)}</blockquote>` : ''}`;
+    <div class="zoom-caption">
+      <div class="zoom-name">${esc(c.name)}</div>
+      ${note ? `<div class="zoom-note">${esc(note)}</div>` : ''}
+      ${showFlavor && c.flavor ? `<blockquote class="zoom-flavor">${esc(c.flavor)}</blockquote>` : ''}
+    </div>`;
   document.getElementById('zoom-modal').classList.add('show');
 }
 function openZoom(secId, subId, i) {
