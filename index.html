@@ -546,7 +546,15 @@
     font-style: italic; font-size: 17px; line-height: 1.65; color: var(--parchment);
   }
   .zoom-flavor::before { content: '❝ '; color: var(--gold); }
-  .entry-move.on { border-color: var(--border-gold); color: var(--gold-bright); }
+  .entry-move.on {
+    border-color: var(--border-gold); color: var(--gold-bright);
+    background: rgba(201,162,75,.18);
+  }
+  .card-flavor {
+    font-size: 13.5px; font-style: italic; line-height: 1.5;
+    color: var(--parchment-dim); margin-top: 6px;
+  }
+  .card-flavor::before { content: '❝ '; color: var(--gold); font-style: normal; }
 
   .passage {
     grid-column: 1 / -1;
@@ -1181,7 +1189,9 @@ function cardHTML(c, appr) {
   const img = c.img
     ? `<img loading="lazy" draggable="false" src="${c.img}" alt="${esc(c.name)}">`
     : `<div class="noimg"><strong>${esc(c.name)}</strong><span>${esc(c.type_line)}</span></div>`;
-  const tagRow = appr ? `<div class="appear-tag">
+  const flavorRow = appr && appr.fl && c.flavor
+    ? `<div class="card-flavor">${esc(c.flavor)}</div>` : '';
+  const tagRow = appr ? `${flavorRow}<div class="appear-tag">
       ${appr.loc && canEdit() ? `<span class="drag-handle" title="Drag to move this card">⠿</span>` : ''}
       ${appr.note ? `<span class="tag-pill note">${esc(appr.note)}</span>` : ''}
       ${isOwned(c.id) && !appr.covered ? '<span class="need-copy">needs another copy</span>' : ''}

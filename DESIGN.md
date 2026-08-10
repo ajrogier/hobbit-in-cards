@@ -113,9 +113,12 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   image-drag eats the pointer stream). On touch, the ⠿ handle (touch-action: none) drags
   immediately; the card body needs a ~300ms hold, which real fingers often lose to scroll.
 - `removeEntry` — the ✕ under a card drops that one placement.
-- **Lightbox** (`openZoom`) — in read mode (and for visitors) tapping a card shows it big
-  with its placement note; flavor text appears only if that placement's ❝ toggle (edit
-  mode, next to ‹ › ✕) marked it relevant. Edit-mode taps keep opening the manager dialog.
+- **Lightbox** (`openZoom`/`showZoom`) — in read mode (and for visitors) tapping a card
+  shows it big with its placement note; flavor text appears only if that placement's ❝
+  toggle (edit mode, next to ‹ › ✕) marked it relevant. A marked placement also renders
+  the flavor line inline under the card in the story view — instant feedback when
+  toggling, and part of the story in read mode. Edit-mode taps keep the manager dialog;
+  a passage's mini card zooms in read mode (its quote is already on the page).
 - **Passages** — the ❝ Add-text tile inserts free narration (prompt); the card dialog's
   "❝ Quote here" inserts the card's flavor text as a passage linked to the card. Passages
   share the entry list, so they reorder, drag, and delete like cards (`placementsIn()`

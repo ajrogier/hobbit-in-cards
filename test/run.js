@@ -206,6 +206,8 @@ const mock = require('./mock.js');
   await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move.fl').click();
   console.log('flavor toggle lit (expect true):',
     await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move.fl.on').count() === 1);
+  console.log('flavor line appears under the card at once (expect 1):',
+    await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .card-flavor', { hasText: 'pocketses' }).count());
 
   // Read/edit toggle: read mode hides all authoring chrome, edit brings it back
   await page.click('.story-edit-toggle');
@@ -215,6 +217,8 @@ const mock = require('./mock.js');
     await page.locator('.entry-del').count());
   console.log('read mode hides count badges (expect 0 visible):',
     await page.locator('#view-story .owned-badge:visible').count());
+  console.log('marked flavor stays visible in read mode (expect 1):',
+    await page.locator('#view-story .card-flavor', { hasText: 'pocketses' }).count());
 
   // Read-mode tap = lightbox; flavor shows only where it was marked with ❝
   await page.locator('#view-story .card[data-id="mock-8"]').first().click();
