@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T13:24:27.824Z",
+  "saved_at": "2026-08-10T13:29:35.306Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1431,7 +1431,12 @@
         "id": "smsn1em95jhgyv",
         "title": "Out of the Frying-Pan into the Fire",
         "blurb": "",
-        "cards": [],
+        "cards": [
+          {
+            "cardId": "196d9287-a37d-4b27-a83b-a5489a54f081",
+            "note": ""
+          }
+        ],
         "subs": []
       },
       {
