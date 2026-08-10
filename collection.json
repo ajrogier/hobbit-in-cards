@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T09:37:11.841Z",
+  "saved_at": "2026-08-10T09:37:26.237Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1209,6 +1209,20 @@
       {
         "id": "smsn1fa9sidf5z",
         "title": "A Warm Welcome",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1fg80ydqxn",
+        "title": "On the Doorstep",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1flcwcral4",
+        "title": "Inside Information",
         "blurb": "",
         "cards": [],
         "subs": []
