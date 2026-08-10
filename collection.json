@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-10T09:38:03.935Z",
+  "saved_at": "2026-08-10T09:38:17.993Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1258,6 +1258,20 @@
       {
         "id": "smsn1gegyc7qph",
         "title": "The Clouds Burst",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1gjlv40lr4",
+        "title": "The Return Journey",
+        "blurb": "",
+        "cards": [],
+        "subs": []
+      },
+      {
+        "id": "smsn1gpbbc0r53",
+        "title": "The Last Stage",
         "blurb": "",
         "cards": [],
         "subs": []
