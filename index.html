@@ -301,32 +301,36 @@
   .qty-pill .more:hover { color: var(--gold-bright); border-color: var(--border-gold); }
   .qty-pill .foil { color: #9ecfdd; border-color: #3d5560; }
   .qty-pill .foil:hover { border-color: #9ecfdd; }
-  /* Foil copies shimmer on the card itself: a rainbow wash plus a slow travelling gleam */
+  /* Foil copies shimmer on the card itself. Default is a calm static wash;
+     the "animated" setting adds a gleam sweep driven purely by transform,
+     so it composites on the GPU without per-frame repaints. */
   .foil-sheen {
     position: absolute; top: 0; left: 0; width: 100%;
     aspect-ratio: 488/680; border-radius: 4.75% / 3.5%;
-    background:
-      linear-gradient(115deg,
-        rgba(110,190,255,.50) 0%, rgba(255,140,220,.38) 22%,
-        rgba(255,225,120,.45) 45%, rgba(120,255,190,.40) 68%,
-        rgba(150,160,255,.48) 88%, rgba(110,190,255,.50) 100%);
-    background-size: 300% 300%;
+    overflow: hidden;
+    background: linear-gradient(115deg,
+      rgba(110,190,255,.32) 0%, rgba(255,140,220,.22) 25%,
+      rgba(255,225,120,.28) 50%, rgba(120,255,190,.24) 72%,
+      rgba(150,160,255,.30) 100%);
     mix-blend-mode: screen;
-    animation: foil-drift 7s ease-in-out infinite alternate;
     pointer-events: none;
   }
-  .foil-sheen::after {
+  body.sheen-anim .foil-sheen::after {
     content: '';
-    position: absolute; inset: 0; border-radius: inherit;
-    background: linear-gradient(115deg,
-      transparent 30%, rgba(255,255,255,.55) 48%, rgba(255,255,255,.2) 52%, transparent 65%);
-    background-size: 300% 300%;
-    animation: foil-gleam 3.6s linear infinite;
+    position: absolute; top: -60%; left: 0;
+    width: 45%; height: 220%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+    transform: rotate(18deg) translateX(-260%);
+    animation: foil-gleam 6s ease-in-out infinite;
+    will-change: transform;
   }
-  @keyframes foil-drift { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
-  @keyframes foil-gleam { from { background-position: 130% 130%; } to { background-position: -30% -30%; } }
+  @keyframes foil-gleam {
+    0%   { transform: rotate(18deg) translateX(-260%); }
+    45%  { transform: rotate(18deg) translateX(420%); }
+    100% { transform: rotate(18deg) translateX(420%); }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .foil-sheen, .foil-sheen::after { animation: none; }
+    body.sheen-anim .foil-sheen::after { animation: none; display: none; }
   }
   .card.foiled img, .card.foiled .noimg { box-shadow: 0 0 0 2px #9ecfdd, 0 6px 18px rgba(158,207,221,.35); }
   .owned-badge {
@@ -561,8 +565,19 @@
 
   /* ---------- Sync & owner sign-in ---------- */
   body.readonly .qty-pill, body.readonly #btn-import { display: none; }
+  #sync-chip { font-size: 14.5px; color: var(--parchment-dim); }
   #sync-chip.ok { color: var(--leaf); }
-  #sync-chip.warn { color: #d98d5f; border-color: #8a4d2c; }
+  #sync-chip.warn { color: #d98d5f; }
+  #btn-settings.warn { color: #d98d5f; border-color: #8a4d2c; }
+  .set-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 18px 0; }
+  .set-label { width: 110px; color: var(--parchment-dim); font-size: 15px; flex-shrink: 0; }
+  .seg { display: flex; gap: 6px; }
+  .seg button {
+    padding: 7px 15px; border-radius: 16px;
+    border: 1px solid var(--border); background: none;
+    color: var(--parchment-dim); font-family: inherit; font-size: 14.5px; cursor: pointer;
+  }
+  .seg button.on { border-color: var(--border-gold); color: var(--gold-bright); }
   .token-input {
     width: 100%; margin: 12px 0 4px;
     background: var(--bg-card); border: 1px solid var(--border);
@@ -600,8 +615,7 @@
   <div class="nav-tools">
     <button class="tool-btn" onclick="exportData()" title="Download a backup of your collection">Export</button>
     <button class="tool-btn" id="btn-import" onclick="document.getElementById('import-file').click()" title="Restore a JSON backup or import a ManaBox CSV">Import</button>
-    <button class="tool-btn" id="btn-theme" onclick="toggleTheme()" title="Switch between night and day">☀</button>
-    <button class="tool-btn" id="sync-chip" onclick="openAuth()" title="Collection sync — owner sign-in">…</button>
+    <button class="tool-btn" id="btn-settings" onclick="openSettings()" title="Settings — theme, foil shimmer, owner sign-in">⚙</button>
     <input type="file" id="import-file" accept=".json,.csv" onchange="importFile(this)">
   </div>
 </nav>
@@ -642,6 +656,32 @@
     <h3 id="modal-title">Assign to chapter</h3>
     <div class="sub" id="modal-sub"></div>
     <div id="modal-options"></div>
+  </div>
+</div>
+
+<div class="modal-wrap" id="settings-modal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <h3>Settings</h3>
+    <div class="set-row">
+      <span class="set-label">Theme</span>
+      <div class="seg">
+        <button id="theme-dark" onclick="setTheme('dark')">☾ Night</button>
+        <button id="theme-light" onclick="setTheme('light')">☀ Day</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <span class="set-label">Foil shimmer</span>
+      <div class="seg">
+        <button id="sheen-subtle" onclick="setSheen('subtle')">Subtle</button>
+        <button id="sheen-animated" onclick="setSheen('animated')">Animated</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <span class="set-label">Collection</span>
+      <span id="sync-chip">…</span>
+      <button class="tool-btn" id="btn-signin" onclick="closeSettings();openAuth()">Sign in…</button>
+    </div>
+    <div class="auth-actions"><button class="tool-btn" onclick="closeSettings()">Done</button></div>
   </div>
 </div>
 
@@ -953,6 +993,7 @@ function setSyncStatus(s) {
   el.textContent = label;
   el.classList.toggle('ok', cls === 'ok');
   el.classList.toggle('warn', cls === 'warn');
+  document.getElementById('btn-settings').classList.toggle('warn', cls === 'warn');
 }
 
 /* ---- Owner sign-in ---- */
@@ -1483,26 +1524,29 @@ function toast(msg) {
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    closeModal(); closeAuth();
+    closeModal(); closeAuth(); closeSettings();
     if (document.getElementById('picker-modal').classList.contains('show')) closePicker();
   }
 });
 
-/* ---- Day / night theme (a device preference, not collection data) ---- */
+/* ---- Device preferences: theme & foil shimmer (not collection data) ---- */
 const THEME_KEY = 'hob_theme_v1';
-function applyTheme() {
+const SHEEN_KEY = 'hob_sheen_v1';
+function applyPrefs() {
   const t = localStorage.getItem(THEME_KEY) || 'dark';
+  const s = localStorage.getItem(SHEEN_KEY) || 'subtle';
   document.body.classList.toggle('light', t === 'light');
-  const b = document.getElementById('btn-theme');
-  b.textContent = t === 'light' ? '☾' : '☀';
-  b.title = t === 'light' ? 'Back to the night theme' : 'Day theme — after Tolkien\'s Hobbit cover';
+  document.body.classList.toggle('sheen-anim', s === 'animated');
+  const on = (id, c) => document.getElementById(id).classList.toggle('on', c);
+  on('theme-dark', t !== 'light'); on('theme-light', t === 'light');
+  on('sheen-subtle', s !== 'animated'); on('sheen-animated', s === 'animated');
+  document.getElementById('btn-signin').textContent = token ? 'Owner account…' : 'Sign in…';
 }
-function toggleTheme() {
-  const t = (localStorage.getItem(THEME_KEY) || 'dark') === 'light' ? 'dark' : 'light';
-  localStorage.setItem(THEME_KEY, t);
-  applyTheme();
-}
-applyTheme();
+function setTheme(t) { localStorage.setItem(THEME_KEY, t); applyPrefs(); }
+function setSheen(s) { localStorage.setItem(SHEEN_KEY, s); applyPrefs(); }
+function openSettings() { applyPrefs(); document.getElementById('settings-modal').classList.add('show'); }
+function closeSettings() { document.getElementById('settings-modal').classList.remove('show'); }
+applyPrefs();
 
 document.body.classList.toggle('readonly', !token);
 setSyncStatus(token ? (dirty ? 'pending' : 'saved') : 'viewonly');

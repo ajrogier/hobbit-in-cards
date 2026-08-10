@@ -43,13 +43,25 @@ const mock = require('./mock.js');
   await page.click('.card[data-id="mock-14"]');  // Smaug
   console.log('owned after toggles:', await page.textContent('#stat-owned'));
 
-  // Day theme toggles on and survives reload (device preference)
-  await page.click('#btn-theme');
-  console.log('light theme applied (expect true):', await page.evaluate(() => document.body.classList.contains('light')));
+  // Settings menu: theme + sheen prefs apply and survive reload (device preferences)
+  await page.click('#btn-settings');
+  await page.waitForSelector('#settings-modal.show');
+  await page.click('#theme-light');
+  await page.click('#sheen-animated');
+  console.log('light + animated applied (expect true / true):',
+    await page.evaluate(() => document.body.classList.contains('light')), '/',
+    await page.evaluate(() => document.body.classList.contains('sheen-anim')));
+  await page.keyboard.press('Escape');
   await page.reload();
   await page.waitForSelector('#view-tracker .card');
-  console.log('light theme after reload (expect true):', await page.evaluate(() => document.body.classList.contains('light')));
-  await page.click('#btn-theme');   // back to night for the rest of the run
+  console.log('prefs after reload (expect true / true):',
+    await page.evaluate(() => document.body.classList.contains('light')), '/',
+    await page.evaluate(() => document.body.classList.contains('sheen-anim')));
+  await page.click('#btn-settings');            // back to night + subtle for the rest
+  await page.click('#theme-dark');
+  await page.click('#sheen-subtle');
+  console.log('back to subtle (expect false):', await page.evaluate(() => document.body.classList.contains('sheen-anim')));
+  await page.keyboard.press('Escape');
 
   // Quick foil from the card pill; sheen + badge should appear
   await page.locator('.card[data-id="mock-14"] .qty-pill .foil').click();
