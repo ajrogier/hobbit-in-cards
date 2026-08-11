@@ -124,7 +124,11 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   the flavor line inline under the card in the story view — instant feedback when
   toggling, and part of the story in read mode. Edit-mode taps keep the manager dialog;
   a passage's mini card zooms in read mode (its quote is already on the page).
-- **Passages** — the ❝ Add-text tile inserts free narration (prompt); the card dialog's
+- **Adding content** — one compact action row per section (+ Add cards / ❝ Add text /
+  + Add subsection); new entries append to the section's own list and are dragged into
+  place or into subsections afterwards. Subsections have no add tiles of their own —
+  fill them by dragging, or directly via the card dialog's add-to-section row.
+- **Passages** — the ❝ Add-text action inserts free narration (prompt); the card dialog's
   "❝ Quote here" inserts the card's flavor text as a passage linked to the card. Passages
   share the entry list, so they reorder, drag, and delete like cards (`placementsIn()`
   filters them out wherever coverage/progress/picker-✓ logic needs placements only).

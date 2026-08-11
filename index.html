@@ -630,9 +630,7 @@
   .entry-move:hover:not(:disabled) { border-color: var(--border-gold); color: var(--gold-bright); }
   .entry-move:disabled { opacity: .3; cursor: default; }
   .tag-pill.note { color: #e0c8a0; border-color: #6b5a33; font-style: italic; }
-  .add-card .add-tile { gap: 4px; color: var(--ink-faint); border-style: dashed; cursor: pointer; }
-  .add-card .add-plus { font-size: 34px; line-height: 1; color: var(--gold); }
-  .add-card:hover .add-tile { border-color: var(--border-gold); color: var(--parchment-dim); }
+  .sec-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .place-label { font-size: 14.5px; color: var(--parchment); flex: 0 1 auto; }
 
   /* ---------- Card picker ---------- */
@@ -1286,14 +1284,9 @@ function renderStory() {
         return cardHTML(c, { note: e.note, covered: flags.get(e), loc, fl: !!e.fl,
           zoom: editing ? null : { sec: secId, sub: subId, i } });
       }).join('');
-    const add = editing ? `<div class="card add-card" onclick="openPicker('${secId}','${subId || ''}')" title="Add cards from the set">
-        <div class="noimg add-tile"><span class="add-plus">+</span><span>Add cards</span></div>
-      </div>
-      <div class="card add-card" onclick="addPassage('${secId}','${subId || ''}')" title="Add a passage of story text — narration or a quote">
-        <div class="noimg add-tile"><span class="add-plus">❝</span><span>Add text</span></div>
-      </div>` : '';
-    return `<div class="grid" data-sec="${secId}" data-sub="${subId || ''}">${entriesHTML}${add}</div>`
-      + (!(list || []).length && !editing ? `<p class="empty-ch">Nothing placed here yet.</p>` : '');
+    return `<div class="grid" data-sec="${secId}" data-sub="${subId || ''}">${entriesHTML}</div>`
+      + (!(list || []).length
+          ? `<p class="empty-ch">${editing ? 'Nothing here yet — drag cards in, or add them from the section\u2019s buttons below.' : 'Nothing placed here yet.'}</p>` : '');
   };
   const progress = rawList => {
     const list = placementsIn(rawList);
@@ -1338,7 +1331,11 @@ function renderStory() {
           ${sub.blurb ? `<p class="ch-blurb">${esc(sub.blurb)}</p>` : ''}
           ${grid(sub.cards, sec.id, sub.id)}
         </div>`).join('')}
-      ${editing ? `<button class="tool-btn sec-add" onclick="addSection('${sec.id}')">+ Add subsection</button>` : ''}
+      ${editing ? `<div class="sec-actions">
+        <button class="tool-btn sec-add" onclick="openPicker('${sec.id}','')">+ Add cards</button>
+        <button class="tool-btn sec-add" onclick="addPassage('${sec.id}','')">❝ Add text</button>
+        <button class="tool-btn sec-add" onclick="addSection('${sec.id}')">+ Add subsection</button>
+      </div>` : ''}
     </section>`;
   });
   if (editing) html += `<button class="tool-btn sec-add" onclick="addSection()">+ Add section</button>`;

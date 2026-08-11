@@ -120,12 +120,12 @@ const mock = require('./mock.js');
   console.log('section numeral (expect I):', (await page.textContent('.ch-num')).trim());
 
   answers.push('Bag End');
-  await page.locator('.sec-add').first().click();   // "+ Add subsection" on section I
+  await page.locator('.sec-add', { hasText: 'Add subsection' }).first().click();
   await page.waitForSelector('.subsection');
   console.log('subsection title:', (await page.textContent('.sub-title')).trim());
 
   // Picker on the section: search by name, then by flavor text
-  await page.locator('.chapter .grid').first().locator('.add-card', { hasText: 'Add cards' }).click();
+  await page.locator('.sec-add', { hasText: 'Add cards' }).first().click();
   await page.waitForSelector('#picker-modal.show');
   await page.fill('#picker-search', 'smaug');
   console.log('picker name search (expect 1):', await page.locator('#picker-results .pick').count());
@@ -147,10 +147,11 @@ const mock = require('./mock.js');
     await page.locator('.chapter .grid').first().locator('.card[data-id="mock-8"] .entry-move', { hasText: '‹' }).isDisabled());
 
   // Second placement of Gollum in the subsection -> 1 copy, 2 placements -> amber
-  await page.locator('.subsection .add-card', { hasText: 'Add cards' }).click();
-  await page.fill('#picker-search', 'gollum');
-  await page.click('#picker-results .pick');
-  await page.click('#picker-modal .auth-actions .tool-btn');
+  await page.locator('#view-story .card[data-id="mock-8"]').first().click();
+  await page.selectOption('#modal-add-target', { index: 1 });   // Bag End
+  await page.locator('#modal button', { hasText: 'Place here' }).click();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
   console.log('uncovered placements (expect 1):', await page.locator('#view-story .card.uncovered').count());
   await page.screenshot({ path: 'test/story.png', fullPage: true });
 
@@ -193,7 +194,7 @@ const mock = require('./mock.js');
 
   // Free-text passage via the ❝ tile, then edit-mode removal
   answers.push('And so the company gathered, thirteen dwarves and a burglar.');
-  await page.locator('.chapter .add-card', { hasText: 'Add text' }).first().click();
+  await page.locator('.sec-add', { hasText: 'Add text' }).first().click();
   await page.waitForTimeout(200);
   console.log('free passage added (expect 1):',
     await page.locator('#view-story .passage', { hasText: 'company gathered' }).count());
@@ -270,9 +271,13 @@ const mock = require('./mock.js');
   await page.mouse.move(src.x + src.width / 2, src.y + 40);
   await page.mouse.down();
   await page.mouse.move(src.x + src.width / 2 + 30, src.y + 48, { steps: 4 });   // passes the drag threshold
-  await page.locator('.subsection .add-card', { hasText: 'Add cards' }).scrollIntoViewIfNeeded();
-  const tgt = await page.locator('.subsection .add-card', { hasText: 'Add cards' }).boundingBox();
-  await page.mouse.move(tgt.x + tgt.width / 2, tgt.y + tgt.height / 2, { steps: 12 });
+  await page.locator('.subsection').scrollIntoViewIfNeeded();
+  const tgt = await page.locator('.subsection').boundingBox();
+  await page.mouse.move(tgt.x + tgt.width / 2, tgt.y + 20, { steps: 12 });
+  // mid-drag re-slotting reflows the page: re-acquire the live position for the final approach
+  const tgt2 = await page.locator('.subsection .sub-head').boundingBox();
+  await page.mouse.move(tgt2.x + tgt2.width / 2, tgt2.y + tgt2.height / 2, { steps: 3 });
+  await page.mouse.move(tgt2.x + tgt2.width / 2 + 3, tgt2.y + tgt2.height / 2, { steps: 1 });
   await page.mouse.up();
   await page.waitForTimeout(200);
   console.log('drag moved Smaug to subsection (expect 1 / 1):',
