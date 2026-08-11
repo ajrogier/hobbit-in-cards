@@ -591,6 +591,7 @@
   .passage .p-card img { width: 100%; border-radius: 4.75% / 3.5%; display: block; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
   .passage .p-ctl { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
   .passage[data-sec] { cursor: grab; }
+  .passage.tappable { cursor: zoom-in; }
   #view-story.story-reading .passage { padding-left: 18px; }
   .drag-handle {
     display: inline-flex; align-items: center; justify-content: center;
@@ -1302,12 +1303,19 @@ function renderStory() {
     return `<span class="ch-progress">${got}/${list.length}
       <span class="mini-track"><span class="mini-fill" style="width:${pct}%;display:block"></span></span></span>`;
   };
-  const controls = (secId, subId, idx, max) => editing ? `<span class="sec-controls">
+  const controls = (secId, subId, idx, max) => {
+    if (!editing) return '';
+    const si = story.sections.findIndex(s => s.id === secId);
+    // Subsections keep moving through the outline: past either end they change section
+    const upOff = subId ? (idx === 0 && si === 0) : idx === 0;
+    const downOff = subId ? (idx === max && si === story.sections.length - 1) : idx === max;
+    return `<span class="sec-controls">
       <button onclick="renameSection('${secId}','${subId || ''}')" title="Rename / edit description">✎</button>
-      <button onclick="moveSection('${secId}','${subId || ''}',-1)" title="Move up" ${idx === 0 ? 'disabled' : ''}>↑</button>
-      <button onclick="moveSection('${secId}','${subId || ''}',1)" title="Move down" ${idx === max ? 'disabled' : ''}>↓</button>
+      <button onclick="moveSection('${secId}','${subId || ''}',-1)" title="${subId ? 'Move up — from the top, into the previous section' : 'Move up'}" ${upOff ? 'disabled' : ''}>↑</button>
+      <button onclick="moveSection('${secId}','${subId || ''}',1)" title="${subId ? 'Move down — from the bottom, into the next section' : 'Move down'}" ${downOff ? 'disabled' : ''}>↓</button>
       <button onclick="deleteSection('${secId}','${subId || ''}')" title="Delete">✕</button>
-    </span>` : '';
+    </span>`;
+  };
   let html = '';
   story.sections.forEach((sec, si) => {
     const allEntries = [...(sec.cards || []), ...(sec.subs || []).flatMap(b => b.cards || [])];
@@ -1371,8 +1379,27 @@ function renameSection(secId, subId) {
 }
 function moveSection(secId, subId, d) {
   if (guard()) return;
-  const list = subId ? (findSection(secId)?.subs || []) : story.sections;
-  const i = list.findIndex(x => x.id === (subId || secId));
+  if (subId) {
+    const si = story.sections.findIndex(s => s.id === secId);
+    const sec = story.sections[si];
+    const list = sec.subs || [];
+    const i = list.findIndex(x => x.id === subId);
+    const j = i + d;
+    if (i < 0) return;
+    if (j >= 0 && j < list.length) {
+      [list[i], list[j]] = [list[j], list[i]];
+    } else {
+      const target = story.sections[si + d];          // past the end: change section
+      if (!target) return;
+      const [sub] = list.splice(i, 1);
+      target.subs ??= [];
+      if (d < 0) target.subs.push(sub); else target.subs.unshift(sub);
+    }
+    persist(); renderStory();
+    return;
+  }
+  const list = story.sections;
+  const i = list.findIndex(x => x.id === secId);
   const j = i + d;
   if (i < 0 || j < 0 || j >= list.length) return;
   [list[i], list[j]] = [list[j], list[i]];
@@ -1403,10 +1430,11 @@ function passageHTML(e, byId, loc) {
       <button class="entry-move" onclick="moveEntry('${loc.sec}','${loc.sub || ''}',${loc.i},1)" title="Move later" ${loc.i >= loc.len - 1 ? 'disabled' : ''}>›</button>
       <button class="entry-del" onclick="removeEntry('${loc.sec}','${loc.sub || ''}',${loc.i})" title="Remove this passage">✕</button>
     </span>` : '';
-  return `<div class="passage"${locAttrs}>
+  const bodyTap = !loc && c ? ` onclick="openZoomCard('${c.id}')"` : '';
+  return `<div class="passage${!loc && c ? ' tappable' : ''}"${locAttrs}${bodyTap}>
     ${ctl}
     <blockquote>${esc(e.text)}${c ? `<div class="p-attr">— ${esc(c.name)}</div>` : ''}</blockquote>
-    ${c && c.img ? `<div class="p-card" onclick="${loc ? `openModal('${c.id}')` : `openZoomCard('${c.id}')`}" title="${esc(c.name)}"><img draggable="false" loading="lazy" src="${c.img}" alt="${esc(c.name)}"></div>` : ''}
+    ${c && c.img ? `<div class="p-card" onclick="event.stopPropagation();${loc ? `openModal('${c.id}')` : `openZoomCard('${c.id}')`}" title="${esc(c.name)}"><img draggable="false" loading="lazy" src="${c.img}" alt="${esc(c.name)}"></div>` : ''}
   </div>`;
 }
 function addPassage(secId, subId) {

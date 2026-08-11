@@ -102,7 +102,9 @@ see — and edit mode surfaces the authoring chrome (section controls, add tiles
 per-placement ‹ › ✕ buttons). Starting a section from the blank page flips into edit mode.
 
 - `addSection(parentSecId?)` / `renameSection` / `moveSection` / `deleteSection` — outline CRUD
-  via `prompt()`/`confirm()` (works fine on mobile, no extra UI).
+  via `prompt()`/`confirm()` (works fine on mobile, no extra UI). For subsections, ↑/↓ keep
+  travelling: past the top they move into the previous section (appended), past the bottom
+  into the next (prepended), so a subsection can walk the whole outline.
 - **Picker** (`openPicker(secId, subId?)`) — modal that live-searches the whole set on
   name + type_line + flavor text; tap a card to place it in the target section, tap again to
   remove. Already-placed cards show a ✓ badge; unowned ones render dimmed but are placeable.
@@ -126,6 +128,8 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   "❝ Quote here" inserts the card's flavor text as a passage linked to the card. Passages
   share the entry list, so they reorder, drag, and delete like cards (`placementsIn()`
   filters them out wherever coverage/progress/picker-✓ logic needs placements only).
+  In read mode the whole passage is tappable when linked to a card — quote text or mini
+  card, either opens the card's plate in the lightbox.
 
 ## 4. UI map
 

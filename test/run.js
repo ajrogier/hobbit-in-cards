@@ -4,7 +4,7 @@ const mock = require('./mock.js');
 
 (async () => {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 2000 } });  // tall: the whole tale stays in view, drags never fight scroll
   page.on('console', m => { if (m.type() === 'error') console.log('CONSOLE ERROR:', m.text()); });
   page.on('pageerror', e => console.log('PAGE ERROR:', e.message));
 
@@ -242,8 +242,27 @@ const mock = require('./mock.js');
     await page.locator('#modal.show').isVisible(), '/',
     await page.locator('.zoom-flavor').count());
   await page.keyboard.press('Escape');
+  await page.locator('.passage blockquote').first().click();   // the quote text is a target too
+  console.log('tapping the quote itself zooms its card (expect true / Gollum):',
+    await page.locator('#zoom-modal.show').isVisible(), '/',
+    (await page.textContent('.zoom-name')).trim().split(',')[0]);
+  await page.keyboard.press('Escape');
   await page.click('.story-edit-toggle');
   console.log('edit mode restores controls (expect >0):', await page.locator('.sec-controls').count() > 0);
+
+  // Subsections travel between sections: ↓ past the end lands in the next section
+  answers.push('Roast Mutton');
+  await page.locator('.sec-add').last().click();               // global "+ Add section"
+  await page.waitForTimeout(150);
+  await page.locator('.subsection .sec-controls button', { hasText: '↓' }).click();
+  console.log('subsection travelled to section II (expect 1):',
+    await page.locator('.chapter').nth(1).locator('.sub-title', { hasText: 'Bag End' }).count());
+  await page.locator('.subsection .sec-controls button', { hasText: '↑' }).click();
+  console.log('subsection travelled back (expect 1):',
+    await page.locator('.chapter').first().locator('.sub-title', { hasText: 'Bag End' }).count());
+  await page.locator('.chapter').nth(1).locator('.sec-controls button', { hasText: '✕' }).click();
+  await page.waitForTimeout(150);
+  console.log('scratch section removed (expect 1):', await page.locator('.chapter').count());
 
   // Drag & drop: pull Smaug out of the section into the Bag End subsection
   await page.waitForTimeout(150);   // let the re-render settle before grabbing coordinates
