@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-11T12:33:27.909Z",
+  "saved_at": "2026-08-11T12:33:31.120Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1251,6 +1251,10 @@
             "note": ""
           },
           {
+            "text": "Elves always knew what was going on among the peoples of the land—as quick as water flows, or quicker.",
+            "cardId": "ad7ed4e6-3fe2-40f1-909b-a03b2a3c941a"
+          },
+          {
             "cardId": "758b4398-4522-49c8-94de-b0d647532544",
             "note": ""
           },
@@ -1271,10 +1275,6 @@
           {
             "cardId": "df29484b-de4b-4bab-995a-7605745780d9",
             "note": ""
-          },
-          {
-            "text": "Elves always knew what was going on among the peoples of the land—as quick as water flows, or quicker.",
-            "cardId": "ad7ed4e6-3fe2-40f1-909b-a03b2a3c941a"
           }
         ],
         "subs": []
