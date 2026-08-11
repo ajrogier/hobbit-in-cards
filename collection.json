@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-11T12:39:40.495Z",
+  "saved_at": "2026-08-11T12:40:54.687Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1835,7 +1835,12 @@
         "id": "smsn1fa9sidf5z",
         "title": "A Warm Welcome",
         "blurb": "",
-        "cards": [],
+        "cards": [
+          {
+            "cardId": "42fbd61d-e1a6-465d-b1a3-f5ee0869d3af",
+            "note": ""
+          }
+        ],
         "subs": []
       },
       {
