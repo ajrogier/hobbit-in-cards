@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-11T12:21:56.274Z",
+  "saved_at": "2026-08-11T12:22:23.313Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1786,7 +1786,14 @@
             "note": ""
           }
         ],
-        "subs": []
+        "subs": [
+          {
+            "id": "smsomrkohng59j",
+            "title": "The Dwarves are Captured",
+            "blurb": "",
+            "cards": []
+          }
+        ]
       },
       {
         "id": "smsn1fa9sidf5z",
