@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-12T13:10:12.208Z",
+  "saved_at": "2026-08-12T13:10:27.418Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -2058,7 +2058,20 @@
         "id": "smsn1g27n00cc0",
         "title": "The Gathering of the Clouds",
         "blurb": "",
-        "cards": [],
+        "cards": [
+          {
+            "cardId": "3ad02b56-13ec-46ef-92bd-ae078b8bb517",
+            "note": ""
+          },
+          {
+            "cardId": "178c4cf6-6b11-40e4-9673-c560d6818a6b",
+            "note": ""
+          },
+          {
+            "cardId": "430c8916-1167-400b-9cad-d301f59d5e5d",
+            "note": ""
+          }
+        ],
         "subs": []
       },
       {
