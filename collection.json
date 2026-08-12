@@ -1,7 +1,7 @@
 {
   "site": "the-hobbit-in-cards",
   "version": 3,
-  "saved_at": "2026-08-12T12:37:02.562Z",
+  "saved_at": "2026-08-12T12:38:24.749Z",
   "owned": {
     "6b8e6435-7de4-41d5-bc7d-8e24c11897d0": {
       "q": 0,
@@ -1990,7 +1990,12 @@
         "id": "smsn1flcwcral4",
         "title": "Inside Information",
         "blurb": "",
-        "cards": [],
+        "cards": [
+          {
+            "cardId": "9763bd56-fa4b-4907-ad15-c3f040c5fc0a",
+            "note": ""
+          }
+        ],
         "subs": []
       },
       {
