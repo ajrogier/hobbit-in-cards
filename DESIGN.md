@@ -135,6 +135,16 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   In read mode the whole passage is tappable when linked to a card — quote text or mini
   card, either opens the card's plate in the lightbox.
 
+## 3c. Closing the loop: unused cards & the hunt list
+
+- **Unused in tale** chip (Collection) — filters to cards `storyUsedIds()` has never seen
+  (neither placed nor quoted), with a live count: the browsing list for what's not yet woven in.
+- **Buy list** chip — `buyList()` walks placements in reading order and lists every card whose
+  placements outnumber owned copies, at the point of first shortfall: need × name, where it's
+  first short, have/placed. The chip shows total wanted copies (✓ when covered). "Copy as
+  text" exports `2x Name (#cn)` lines for shops/trades. Both are derived data — visible to
+  visitors too.
+
 ## 4. UI map
 
 - `cardHTML(card, appr?)` — renders one card. With an `appr` argument (story view) it adds the
@@ -177,4 +187,3 @@ cd test && npm install playwright && node run.js
   edit controls.
 - **Drag-and-drop** of cards between sections, and of sections themselves, as an
   alternative to the buttons.
-- **Per-section hunt list**: flat "buy these next" view sorted by story impact.

@@ -316,6 +316,29 @@ const mock = require('./mock.js');
   await page.waitForFunction(() =>
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
 
+  // Unused-in-tale filter and the buy list: place unowned Bólg to create a shortfall
+  await page.click('#nav-story');
+  await page.click('.story-edit-toggle');
+  await page.locator('.sec-add', { hasText: 'Add cards' }).first().click();
+  await page.fill('#picker-search', 'bolg');
+  await page.click('#picker-results .pick');
+  await page.click('#picker-modal .auth-actions .tool-btn');
+  await page.click('#nav-tracker');
+  await page.click('#chip-unused');
+  console.log('unused-in-tale count (expect 20 of 23):', await page.locator('#tracker-grid .card').count());
+  console.log('used card hidden from unused view (expect 0):',
+    await page.locator('#tracker-grid .card[data-id="mock-8"]').count());
+  await page.click('#chip-unused');
+  console.log('buy list chip counts wanted copies (expect 1):',
+    (await page.textContent('#btn-buylist .cnt')).trim());
+  await page.click('#btn-buylist');
+  console.log('buy list row (expect 1 / starts 1× Bólg):',
+    await page.locator('.buy-row').count(), '/',
+    (await page.textContent('.buy-row')).trim().replace(/\s+/g, ' ').slice(0, 30));
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() =>
+    document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
+
   // Viewer mode: fresh context without a token -> read-only, but sees the collection
   const viewerCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const viewer = await viewerCtx.newPage();

@@ -631,6 +631,14 @@
   .entry-move:disabled { opacity: .3; cursor: default; }
   .tag-pill.note { color: #e0c8a0; border-color: #6b5a33; font-style: italic; }
   .sec-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .buy-row {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 15.5px;
+  }
+  .buy-row:last-child { border-bottom: none; }
+  .buy-row b { color: var(--gold-bright); min-width: 30px; }
+  .buy-row .where { color: var(--parchment-dim); font-size: 13.5px; font-style: italic; }
+  .buy-row .have { margin-left: auto; color: var(--ink-faint); font-size: 13px; white-space: nowrap; }
   .place-label { font-size: 14.5px; color: var(--parchment); flex: 0 1 auto; }
 
   /* ---------- Card picker ---------- */
@@ -742,6 +750,8 @@
       <button class="chip" data-r="mythic" onclick="toggleRarity(this)">Mythic <span class="cnt"></span></button>
       <button class="chip" id="chip-missing" onclick="toggleMissing(this)">Missing only</button>
       <button class="chip" id="chip-owned" onclick="toggleOwned(this)">Owned only</button>
+      <button class="chip" id="chip-unused" onclick="toggleUnused(this)" title="Cards that appear nowhere in the tale yet">Unused in tale <span class="cnt"></span></button>
+      <button class="chip" id="btn-buylist" onclick="openBuyList()" title="Copies still wanted to cover every placement in the tale">Buy list <span class="cnt"></span></button>
       <button class="chip" id="chip-main" onclick="toggleMainOnly(this)" title="Collect only the numbered main set — special art treatments (#194+) are hidden and don't count toward the quest">Main set #1–193</button>
     </div>
     <div class="grid" id="tracker-grid"></div>
@@ -786,6 +796,18 @@
       <button class="tool-btn" id="btn-signin" onclick="closeSettings();openAuth()">Sign in…</button>
     </div>
     <div class="auth-actions"><button class="tool-btn" onclick="closeSettings()">Done</button></div>
+  </div>
+</div>
+
+<div class="modal-wrap" id="buylist-modal" onclick="if(event.target===this)closeBuyList()">
+  <div class="modal">
+    <h3>The Hunt List</h3>
+    <div class="sub">Copies still wanted to cover every placement in the tale, in story order.</div>
+    <div id="buylist-rows"></div>
+    <div class="auth-actions">
+      <button class="tool-btn" onclick="copyBuyList()">Copy as text</button>
+      <button class="tool-btn" onclick="closeBuyList()">Done</button>
+    </div>
   </div>
 </div>
 
@@ -867,7 +889,7 @@ let story = load(STORY_KEY, { sections: [] });
 let settings = load(SETTINGS_KEY, { mainOnly: false });
 let view = 'story';   // the tale is the front page; the ledger is one tap away
 let rarityFilter = new Set();
-let missingOnly = false, ownedOnly = false;
+let missingOnly = false, ownedOnly = false, unusedOnly = false;
 let modalCardId = null;
 
 function load(k, fallback) {
@@ -915,6 +937,59 @@ function placementsOf(cardId) {
 }
 
 function copiesOf(id) { const o = owned[id]; return o ? (o.q||0) + (o.f||0) + (o.s||0) : 0; }
+
+/* Every card the tale touches — placements and quoted passages alike */
+function storyUsedIds() {
+  const used = new Set();
+  for (const sec of story.sections) {
+    for (const e of (sec.cards || [])) if (e.cardId) used.add(e.cardId);
+    for (const sub of (sec.subs || []))
+      for (const e of (sub.cards || [])) if (e.cardId) used.add(e.cardId);
+  }
+  return used;
+}
+/* The hunt: cards whose placements outnumber owned copies, in story order of first shortfall */
+function buyList() {
+  const byId = Object.fromEntries(cards.map(c => [c.id, c]));
+  const counts = {}, rows = [], seen = {};
+  forEachEntry((e, sec, sub) => {
+    counts[e.cardId] = (counts[e.cardId] || 0) + 1;
+    const c = byId[e.cardId];
+    if (!c || seen[e.cardId] || counts[e.cardId] <= copiesOf(e.cardId)) return;
+    seen[e.cardId] = true;
+    rows.push({ c, where: sub ? `${sec.title} › ${sub.title}` : sec.title });
+  });
+  for (const r of rows) {
+    r.placed = counts[r.c.id];
+    r.have = copiesOf(r.c.id);
+    r.need = r.placed - r.have;
+  }
+  return rows;
+}
+function toggleUnused(el) {
+  unusedOnly = !unusedOnly;
+  el.classList.toggle('on', unusedOnly);
+  renderTracker();
+}
+function openBuyList() {
+  const rows = buyList();
+  document.getElementById('buylist-rows').innerHTML = rows.length
+    ? rows.map(r => `<div class="buy-row">
+        <b>${r.need}×</b> ${esc(r.c.name)} <span class="cn">${r.c.set === TOKEN_SET_CODE ? 'T' : ''}#${r.c.cn}</span>
+        <span class="where">first short in ${esc(r.where)}</span>
+        <span class="have">have ${r.have} · placed ${r.placed}</span>
+      </div>`).join('')
+    : `<p class="empty-ch">The tale is fully stocked — every placement has its copy.</p>`;
+  document.getElementById('buylist-modal').classList.add('show');
+}
+function closeBuyList() { document.getElementById('buylist-modal').classList.remove('show'); }
+function copyBuyList() {
+  const text = buyList().map(r => `${r.need}x ${r.c.name} (${r.c.set === TOKEN_SET_CODE ? 'T' : ''}#${r.c.cn})`).join('\n');
+  if (!text) { toast('Nothing to buy — the tale is covered.'); return; }
+  navigator.clipboard?.writeText(text)
+    .then(() => toast('Hunt list copied — happy shopping.'))
+    .catch(() => toast('Could not reach the clipboard on this device.'));
+}
 
 /* ================= Card loading ================= */
 async function loadCards(force) {
@@ -1176,6 +1251,10 @@ function updateStats() {
   document.getElementById('stat-pct').textContent = pct + '%';
   document.getElementById('main-progress').style.width = pct + '%';
   document.getElementById('chip-main').classList.toggle('on', !!settings.mainOnly);
+  const used = storyUsedIds();
+  document.querySelector('#chip-unused .cnt').textContent = pool.filter(c => !used.has(c.id)).length;
+  const wanted = buyList().reduce((a, r) => a + r.need, 0);
+  document.querySelector('#btn-buylist .cnt').textContent = wanted || '✓';
   for (const chip of document.querySelectorAll('.chip[data-r]')) {
     const r = chip.dataset.r;
     const rc = pool.filter(c => c.rarity === r);
@@ -1249,6 +1328,7 @@ function renderTracker() {
   if (rarityFilter.size) list = list.filter(c => rarityFilter.has(c.rarity));
   if (missingOnly) list = list.filter(c => !isOwned(c.id));
   if (ownedOnly) list = list.filter(c => isOwned(c.id));
+  if (unusedOnly) { const used = storyUsedIds(); list = list.filter(c => !used.has(c.id)); }
   if (q) list = list.filter(c =>
     fold(c.name).includes(q) ||
     fold(c.type_line).includes(q) ||
@@ -1927,7 +2007,7 @@ function toast(msg) {
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    closeModal(); closeAuth(); closeSettings(); closeZoom();
+    closeModal(); closeAuth(); closeSettings(); closeZoom(); closeBuyList();
     if (document.getElementById('picker-modal').classList.contains('show')) closePicker();
   }
 });

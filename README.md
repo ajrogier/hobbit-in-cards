@@ -27,6 +27,9 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   in a card's dialog quotes its flavor text into the tale, attributed and showing a small
   copy of the card — without counting as a placement, so quoting Ori's line doesn't
   demand a second Ori.
+- **Unused cards & the hunt list** — a Collection chip filters to cards not yet woven
+  into the tale, and the Buy list gathers every copy still wanted to cover the story's
+  placements — in story order, exportable as text for shops and trades.
 - **Copies vs. the tale** — you track regular and foil ✦ copies per card (special arts are
   their own card entries, so they need no separate counter). If a card has more placements
   than you own copies, the uncovered placements glow amber ("needs another copy") — your
