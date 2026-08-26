@@ -817,11 +817,12 @@
     <div class="sub">Copies still wanted to cover every placement in the tale, in story order.
       Every printing is its own row — same name, different art, different row.</div>
     <div id="buylist-rows"></div>
-    <div class="buy-hint">Cardmarket's text import matches names only, so it can't carry versions —
-      Open exact pages lands every wanted printing in its own tab, ready to add to wants or cart.</div>
+    <div class="buy-hint">Copy for Cardmarket uses their product names — a (V.n) suffix picks the
+      version where an expansion has several. If a line bounces on import, its row's
+      link opens the exact page instead.</div>
     <div class="auth-actions">
       <button class="tool-btn" id="btn-cmtabs" onclick="openCmTabs()" title="Opens each wanted printing's exact Cardmarket page in a new tab, in batches — allow pop-ups for this site once"></button>
-      <button class="tool-btn" onclick="copyBuyList('cardmarket')" title="Nx Card Name lines — Cardmarket matches any printing by name (front face for // cards); pin exact versions there after import">Copy for Cardmarket</button>
+      <button class="tool-btn" onclick="copyBuyList('cardmarket')" title="Nx Product Name lines in Cardmarket's own naming — (V.n) suffixes select versions, front face for // cards">Copy for Cardmarket</button>
       <button class="tool-btn" onclick="copyBuyList('plain')" title="Plain lines with collector numbers">Copy plain</button>
       <button class="tool-btn" onclick="closeBuyList()">Done</button>
     </div>
@@ -1046,16 +1047,28 @@ function openCmTabs() {
   updateCmTabsBtn(rows.length);
 }
 function closeBuyList() { document.getElementById('buylist-modal').classList.remove('show'); }
-/* Cardmarket's MTG wants importer matches on the card name ALONE — any appended
-   expansion or (V.n) suffix becomes part of the name and kills the match (verified
-   against a real import). Double-faced/adventure cards match by their FRONT face
-   name only. So: emit "Nx Front Face Name", merging same-named printings and summing
-   their needs. The import lands as any-version wants; exact printings are then pinned
-   in Cardmarket's wants editor. */
+/* Cardmarket's wants importer matches on Cardmarket PRODUCT NAMES — their own
+   import example lists "3 Stock Up (V.1)". A product name is the card name alone
+   when an expansion holds one printing, and "Name (V.n)" when it holds several,
+   numbered in collector order. Appending anything else (an expansion name) kills
+   the match — verified against a real import. Double-faced/adventure cards go by
+   their FRONT face. Cardmarket shelves a set as main / ": Extras" / tokens
+   expansions, so version numbering restarts at the main-set boundary. The V.n
+   order is a best-effort mirror of their catalog — a bounced line falls back to
+   the row's exact-page link. */
+function cmProductName(c) {
+  const name = c.name.split(' // ')[0];
+  const bucket = cards.filter(x =>
+    x.set === c.set && isMainSet(x) === isMainSet(c) &&
+    x.name.split(' // ')[0] === name);
+  if (bucket.length < 2) return name;
+  bucket.sort((a, b) => (parseInt(a.cn)||9999) - (parseInt(b.cn)||9999) || a.cn.localeCompare(b.cn));
+  return `${name} (V.${bucket.indexOf(c) + 1})`;
+}
 function cardmarketText(rows) {
   const agg = new Map();
   for (const r of rows) {
-    const name = r.c.name.split(' // ')[0];
+    const name = cmProductName(r.c);
     agg.set(name, (agg.get(name) || 0) + r.need);
   }
   return [...agg].map(([name, n]) => `${n}x ${name}`).join('\n');
@@ -1068,7 +1081,7 @@ function copyBuyList(format) {
   if (!text) { toast('Nothing to buy — the tale is covered.'); return; }
   navigator.clipboard?.writeText(text)
     .then(() => toast(format === 'cardmarket'
-      ? 'Copied for Cardmarket — the import is any-version; use the row links to pin exact arts.'
+      ? 'Copied in Cardmarket product names, versions included — if a line bounces, use its row link.'
       : 'Hunt list copied — happy shopping.'))
     .catch(() => toast('Could not reach the clipboard on this device.'));
 }

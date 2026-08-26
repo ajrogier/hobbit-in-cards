@@ -147,17 +147,20 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   printing on Cardmarket (`cmLink()`): Scryfall's `cardmarket_id` is Cardmarket's idProduct,
   and `cardmarket.com/en/Magic/Products?idProduct=N` lands on the exact version's page.
   Fallbacks when Scryfall has no id yet: `purchase_uris.cardmarket`, then a name search.
-  **⧉ Open exact pages** (`openCmTabs()`) is the bulk path for versions — Cardmarket's
-  text import cannot carry printings (verified: any suffix beyond the name kills the
-  match), so the button window.opens each wanted printing's exact page in batches of 10.
-  Pop-up blocking is handled: window.open returning null stops the batch without
-  advancing the cursor, so the next press resumes where it stopped (the toast tells the
-  user to allow pop-ups for the site). Handles get `opener = null`.
-  Two exports: **Copy for Cardmarket** (`cardmarketText()`) emits `Nx Card Name` lines —
-  verified against a real import, their MTG wants importer matches on the name ALONE
-  (front face for `A // B` cards); any appended expansion or version becomes part of the
-  name and kills the match. Same-named printings are merged with needs summed — the text
-  import is inherently any-version, so exact arts are bought/pinned via the row links.
+  **⧉ Open exact pages** (`openCmTabs()`) window.opens each wanted printing's exact page
+  in batches of 10 — the guaranteed-correct bulk path. Pop-up blocking is handled:
+  window.open returning null stops the batch without advancing the cursor, so the next
+  press resumes where it stopped (the toast tells the user to allow pop-ups for the
+  site). Handles get `opener = null`.
+  Two exports: **Copy for Cardmarket** (`cardmarketText()`) emits `Nx Product Name`
+  lines in Cardmarket's own naming, one per printing (`cmProductName()`): the bare card
+  name when an expansion holds one printing of it, `Name (V.n)` when it holds several —
+  their import example lists "3 Stock Up (V.1)" — numbered in collector order, front
+  face for `A // B` cards. Anything else appended (an expansion name) becomes part of
+  the name and kills the match — verified against a real import. Cardmarket shelves a
+  set as main / ": Extras" / tokens expansions, so `cmProductName()` restarts version
+  numbering at the main-set boundary (`isMainSet()`); the V.n order is a best-effort
+  mirror of their catalog, and a bounced line falls back to the row's exact-page link.
   **Copy plain** keeps `2x Name (#cn)` for humans. Both are derived data — visible to
   visitors too.
 

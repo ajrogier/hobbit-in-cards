@@ -339,9 +339,12 @@ const mock = require('./mock.js');
     await page.locator('.buy-row').count(), '/',
     (await page.textContent('.buy-row')).trim().replace(/\s+/g, ' ').slice(0, 30));
   const cmLines = await page.evaluate(() => cardmarketText(buyList()).split('\n'));
-  console.log('cardmarket lines: name only, twins merged (expect true / true / 2 lines):',
+  console.log('cardmarket lines: product names, twin arts versioned apart (expect true / true / true / 3 lines):',
     cmLines[0] === '1x Bólg of the North', '/',
-    cmLines[1] === '2x Bilbo, Fellow Conspirator', '/', cmLines.length);
+    cmLines[1] === '1x Bilbo, Fellow Conspirator (V.1)', '/',
+    cmLines[2] === '1x Bilbo, Fellow Conspirator (V.2)', '/', cmLines.length);
+  console.log('main-set printing stays a bare product name despite extras twins (expect true):',
+    await page.evaluate(() => cmProductName(cards.find(c => c.id === 'mock-1')) === 'Bilbo, Fellow Conspirator'));
   const faceLine = await page.evaluate(() =>
     cardmarketText([{ c: { name: "Bilbo, Luckwearer // Burglar's Plot", set: 'hob', cn: '32' }, need: 1 }]));
   console.log('double-faced names use the front face (expect true):', faceLine === '1x Bilbo, Luckwearer');
