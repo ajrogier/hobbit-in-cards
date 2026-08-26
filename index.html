@@ -632,13 +632,25 @@
   .tag-pill.note { color: #e0c8a0; border-color: #6b5a33; font-style: italic; }
   .sec-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .buy-row {
-    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 12px;
     padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 15.5px;
   }
   .buy-row:last-child { border-bottom: none; }
-  .buy-row b { color: var(--gold-bright); min-width: 30px; }
-  .buy-row .where { color: var(--parchment-dim); font-size: 13.5px; font-style: italic; }
-  .buy-row .have { margin-left: auto; color: var(--ink-faint); font-size: 13px; white-space: nowrap; }
+  .buy-row b { color: var(--gold-bright); }
+  .buy-row .thumb {
+    width: 46px; aspect-ratio: 488/680; object-fit: cover; border-radius: 4px;
+    flex-shrink: 0; border: 1px solid var(--border); cursor: zoom-in;
+  }
+  .buy-info { flex: 1 1 auto; min-width: 0; }
+  .buy-sub { color: var(--parchment-dim); font-size: 13px; font-style: italic; margin-top: 2px; }
+  .cm-link {
+    flex-shrink: 0; font-size: 13px; text-decoration: none; white-space: nowrap;
+    color: var(--gold-bright); border: 1px solid var(--border-gold);
+    border-radius: 999px; padding: 5px 11px;
+  }
+  .cm-link:hover { background: var(--overlay); }
+  .cm-link.loose { color: var(--parchment-dim); border-color: var(--border); }
+  .buy-hint { color: var(--ink-faint); font-size: 13px; margin-top: 10px; }
   .place-label { font-size: 14.5px; color: var(--parchment); flex: 0 1 auto; }
 
   /* ---------- Card picker ---------- */
@@ -802,8 +814,11 @@
 <div class="modal-wrap" id="buylist-modal" onclick="if(event.target===this)closeBuyList()">
   <div class="modal">
     <h3>The Hunt List</h3>
-    <div class="sub">Copies still wanted to cover every placement in the tale, in story order.</div>
+    <div class="sub">Copies still wanted to cover every placement in the tale, in story order.
+      Every printing is its own row — same name, different art, different row.</div>
     <div id="buylist-rows"></div>
+    <div class="buy-hint">Cardmarket's text import matches names only, so it can't carry versions —
+      use each row's link to buy or pin the exact printing.</div>
     <div class="auth-actions">
       <button class="tool-btn" onclick="copyBuyList('cardmarket')" title="Nx Card Name lines — Cardmarket matches any printing by name (front face for // cards); pin exact versions there after import">Copy for Cardmarket</button>
       <button class="tool-btn" onclick="copyBuyList('plain')" title="Plain lines with collector numbers">Copy plain</button>
@@ -860,7 +875,7 @@
 /* ================= Data & state ================= */
 const SET_CODE = 'hob';
 const TOKEN_SET_CODE = 'thob';   // the set's token cards
-const CACHE_KEY = 'hob_cards_v4';  // v4: includes expansion names
+const CACHE_KEY = 'hob_cards_v5';  // v5: includes artist + Cardmarket product ids
 const CACHE_HOURS = 24;
 const OWNED_KEY = 'hob_owned_v1';
 const STORY_KEY = 'hob_story_v3';
@@ -972,13 +987,28 @@ function toggleUnused(el) {
   el.classList.toggle('on', unusedOnly);
   renderTracker();
 }
+/* Deep link to THIS printing on Cardmarket. Scryfall's cardmarket_id is Cardmarket's
+   idProduct, and cardmarket.com/en/Magic/Products?idProduct=N lands on the exact
+   version's page — no cross-referencing arts by hand. Fallbacks: Scryfall's own
+   purchase link, then a plain name search (front face). */
+function cmLink(c) {
+  if (c.cm) return 'https://www.cardmarket.com/en/Magic/Products?idProduct=' + c.cm;
+  return c.cmUri ||
+    'https://www.cardmarket.com/en/Magic/Products/Search?searchString=' +
+    encodeURIComponent(c.name.split(' // ')[0]);
+}
 function openBuyList() {
   const rows = buyList();
   document.getElementById('buylist-rows').innerHTML = rows.length
     ? rows.map(r => `<div class="buy-row">
-        <b>${r.need}×</b> ${esc(r.c.name)} <span class="cn">${r.c.set === TOKEN_SET_CODE ? 'T' : ''}#${r.c.cn}</span>
-        <span class="where">first short in ${esc(r.where)}</span>
-        <span class="have">have ${r.have} · placed ${r.placed}</span>
+        ${r.c.img ? `<img class="thumb" src="${r.c.img}" alt="" loading="lazy" draggable="false"
+          onclick="openZoomCard('${r.c.id}')">` : ''}
+        <div class="buy-info">
+          <div><b>${r.need}×</b> ${esc(r.c.name)} <span class="cn">${r.c.set === TOKEN_SET_CODE ? 'T' : ''}#${r.c.cn}</span></div>
+          <div class="buy-sub">${r.c.artist ? `art by ${esc(r.c.artist)} · ` : ''}first short in ${esc(r.where)} · have ${r.have} / placed ${r.placed}</div>
+        </div>
+        <a class="cm-link${r.c.cm ? '' : ' loose'}" href="${cmLink(r.c)}" target="_blank" rel="noopener"
+          title="${r.c.cm ? 'Opens this exact printing on Cardmarket' : 'No exact link known yet — opens a name search on Cardmarket'}">Cardmarket ↗</a>
       </div>`).join('')
     : `<p class="empty-ch">The tale is fully stocked — every placement has its copy.</p>`;
   document.getElementById('buylist-modal').classList.add('show');
@@ -1006,7 +1036,7 @@ function copyBuyList(format) {
   if (!text) { toast('Nothing to buy — the tale is covered.'); return; }
   navigator.clipboard?.writeText(text)
     .then(() => toast(format === 'cardmarket'
-      ? 'Copied for Cardmarket — after importing, pin exact versions in their wants editor.'
+      ? 'Copied for Cardmarket — the import is any-version; use the row links to pin exact arts.'
       : 'Hunt list copied — happy shopping.'))
     .catch(() => toast('Could not reach the clipboard on this device.'));
 }
@@ -1069,6 +1099,9 @@ function trimCard(c, setCode) {
     oracle: (c.oracle_text || (c.card_faces ? c.card_faces.map(f=>f.oracle_text||'').join(' ') : '')) || '',
     img: face.image_uris ? face.image_uris.normal : null,
     art: face.image_uris ? face.image_uris.art_crop : null,
+    artist: c.artist || (c.card_faces && c.card_faces[0].artist) || '',
+    cm: c.cardmarket_id || null,                       // Cardmarket idProduct: exact-printing deep link
+    cmUri: (c.purchase_uris && c.purchase_uris.cardmarket) || null,
     uri: c.scryfall_uri,
   };
 }

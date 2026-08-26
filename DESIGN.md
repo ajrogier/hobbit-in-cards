@@ -142,11 +142,16 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
 - **Buy list** chip — `buyList()` walks placements in reading order and lists every card whose
   placements outnumber owned copies, at the point of first shortfall: need × name, where it's
   first short, have/placed. The chip shows total wanted copies (✓ when covered).
+  Rows are PER PRINTING — same name in different arts stays separate, distinguished by a
+  thumbnail (tap to zoom) and the artist line. Each row carries a deep link to that exact
+  printing on Cardmarket (`cmLink()`): Scryfall's `cardmarket_id` is Cardmarket's idProduct,
+  and `cardmarket.com/en/Magic/Products?idProduct=N` lands on the exact version's page.
+  Fallbacks when Scryfall has no id yet: `purchase_uris.cardmarket`, then a name search.
   Two exports: **Copy for Cardmarket** (`cardmarketText()`) emits `Nx Card Name` lines —
   verified against a real import, their MTG wants importer matches on the name ALONE
   (front face for `A // B` cards); any appended expansion or version becomes part of the
-  name and kills the match. Same-named printings are merged with needs summed; the import
-  lands as any-version wants and exact printings are pinned in Cardmarket's wants editor.
+  name and kills the match. Same-named printings are merged with needs summed — the text
+  import is inherently any-version, so exact arts are bought/pinned via the row links.
   **Copy plain** keeps `2x Name (#cn)` for humans. Both are derived data — visible to
   visitors too.
 

@@ -29,9 +29,12 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   demand a second Ori.
 - **Unused cards & the hunt list** — a Collection chip filters to cards not yet woven
   into the tale, and the Buy list gathers every copy still wanted to cover the story's
-  placements — in story order, exportable as plain text or in Cardmarket's
+  placements — in story order, one row per printing (same name in two arts = two rows,
+  told apart by thumbnail and artist), each row deep-linking to that **exact printing's
+  page on Cardmarket** via its product ID. Exportable as plain text or in Cardmarket's
   wants-import format (plain `Nx Card Name` lines, front face for // cards — their
-  MTG importer matches names only; pin exact printings in Cardmarket afterwards).
+  MTG importer matches names only, so the import is any-version; the row links are
+  how you buy or pin the exact arts).
 - **Copies vs. the tale** — you track regular and foil ✦ copies per card (special arts are
   their own card entries, so they need no separate counter). If a card has more placements
   than you own copies, the uncovered placements glow amber ("needs another copy") — your

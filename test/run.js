@@ -345,6 +345,20 @@ const mock = require('./mock.js');
   const faceLine = await page.evaluate(() =>
     cardmarketText([{ c: { name: "Bilbo, Luckwearer // Burglar's Plot", set: 'hob', cn: '32' }, need: 1 }]));
   console.log('double-faced names use the front face (expect true):', faceLine === '1x Bilbo, Luckwearer');
+  // Exact-printing links: each art keeps its own row with its own Cardmarket idProduct link
+  const cmHrefs = await page.locator('#buylist-rows .cm-link').evaluateAll(as => as.map(a => a.href));
+  console.log('per-printing Cardmarket links (expect 700016 / 700300 / 700301):',
+    cmHrefs.map(h => (h.match(/idProduct=(\d+)/) || [])[1]).join(' / '));
+  console.log('twin arts told apart by artist (expect true / true):',
+    (await page.textContent('#buylist-rows')).includes('art by Alan Lee'), '/',
+    (await page.textContent('#buylist-rows')).includes('art by John Howe'));
+  const cmFallbacks = await page.evaluate(() => [
+    cmLink(cards.find(c => c.id === 'tok-1')),
+    cmLink(cards.find(c => c.id === 'tok-2')),
+  ]);
+  console.log('link fallbacks: scryfall purchase uri, then name search (expect true / true):',
+    cmFallbacks[0].includes('searchString=Dragon+Token'), '/',
+    cmFallbacks[1].includes('Search?searchString=Spider'));
   await page.keyboard.press('Escape');
   await page.waitForFunction(() =>
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });

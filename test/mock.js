@@ -32,6 +32,9 @@ const artFor = cn => cn === '14'
       '<svg xmlns="http://www.w3.org/2000/svg" width="626" height="457">' +
       '<rect width="626" height="457" fill="#5a1e12"/><circle cx="313" cy="228" r="170" fill="#e0863e"/></svg>') }
   : null; // most cards keep placeholders; one real <img> exercises native-drag suppression
+// Distinct Cardmarket product ids for the twin printings prove the buy list
+// links each ART separately; #20 has none (name-search fallback path).
+const cmIds = { '16': 700016, '300': 700300, '301': 700301 };
 const data = names.map(([cn, name, rarity, type_line, flavor]) => ({
   id: 'mock-' + cn,
   name, collector_number: cn, rarity, type_line,
@@ -39,6 +42,8 @@ const data = names.map(([cn, name, rarity, type_line, flavor]) => ({
   flavor_text: flavor,
   oracle_text: '',
   image_uris: artFor(cn),
+  artist: cn === '300' ? 'Alan Lee' : cn === '301' ? 'John Howe' : '',
+  cardmarket_id: cmIds[cn] || null,
   scryfall_uri: 'https://scryfall.com/',
 }));
 // Token companion set (thob): same collector numbers restart at 1
@@ -52,6 +57,8 @@ const tokens = [
   flavor_text: flavor,
   oracle_text: '',
   image_uris: null,
+  // token: no product id, but Scryfall's own purchase link (middle fallback)
+  purchase_uris: cn === '1' ? { cardmarket: 'https://www.cardmarket.com/en/Magic/Products/Search?searchString=Dragon+Token' } : undefined,
   scryfall_uri: 'https://scryfall.com/',
 }));
 
