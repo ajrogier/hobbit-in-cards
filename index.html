@@ -818,8 +818,9 @@
       Every printing is its own row — same name, different art, different row.</div>
     <div id="buylist-rows"></div>
     <div class="buy-hint">Cardmarket's text import matches names only, so it can't carry versions —
-      use each row's link to buy or pin the exact printing.</div>
+      Open exact pages lands every wanted printing in its own tab, ready to add to wants or cart.</div>
     <div class="auth-actions">
+      <button class="tool-btn" id="btn-cmtabs" onclick="openCmTabs()" title="Opens each wanted printing's exact Cardmarket page in a new tab, in batches — allow pop-ups for this site once"></button>
       <button class="tool-btn" onclick="copyBuyList('cardmarket')" title="Nx Card Name lines — Cardmarket matches any printing by name (front face for // cards); pin exact versions there after import">Copy for Cardmarket</button>
       <button class="tool-btn" onclick="copyBuyList('plain')" title="Plain lines with collector numbers">Copy plain</button>
       <button class="tool-btn" onclick="closeBuyList()">Done</button>
@@ -1011,7 +1012,38 @@ function openBuyList() {
           title="${r.c.cm ? 'Opens this exact printing on Cardmarket' : 'No exact link known yet — opens a name search on Cardmarket'}">Cardmarket ↗</a>
       </div>`).join('')
     : `<p class="empty-ch">The tale is fully stocked — every placement has its copy.</p>`;
+  cmTabCursor = 0;
+  updateCmTabsBtn(rows.length);
   document.getElementById('buylist-modal').classList.add('show');
+}
+/* Bulk-with-versions, the only way Cardmarket allows it: their text import can't
+   carry printings, so instead open every wanted printing's EXACT product page in
+   its own tab (batches of 10 — after the browser is told to allow pop-ups for
+   this site, a batch opens on one click). Adding to wants/cart is then one click
+   per tab, with zero version cross-referencing. */
+let cmTabCursor = 0;
+function updateCmTabsBtn(total) {
+  const left = total - cmTabCursor;
+  document.getElementById('btn-cmtabs').textContent =
+    left > 0 ? `⧉ Open ${Math.min(10, left)} exact page${Math.min(10, left) === 1 ? '' : 's'}${cmTabCursor ? ` (${left} left)` : ''}` : '⧉ Open exact pages';
+}
+function openCmTabs() {
+  const rows = buyList();
+  if (!rows.length) { toast('Nothing to open — the tale is covered.'); return; }
+  if (cmTabCursor >= rows.length) cmTabCursor = 0;
+  const batch = rows.slice(cmTabCursor, cmTabCursor + 10);
+  let opened = 0;
+  for (const r of batch) {
+    const w = window.open(cmLink(r.c), '_blank');
+    if (!w) break;               // pop-up blocked: stay put so the next press resumes here
+    w.opener = null;
+    opened++; cmTabCursor++;
+  }
+  const left = rows.length - cmTabCursor;
+  if (!opened) toast('The browser blocked the tabs — allow pop-ups for this site, then press again.');
+  else if (opened < batch.length) toast(`Opened ${opened}, then the browser blocked the rest — allow pop-ups for this site to open batches.`);
+  else toast(left > 0 ? `Opened ${opened} exact pages — ${left} to go.` : 'All exact pages opened — add each to your wants or cart there.');
+  updateCmTabsBtn(rows.length);
 }
 function closeBuyList() { document.getElementById('buylist-modal').classList.remove('show'); }
 /* Cardmarket's MTG wants importer matches on the card name ALONE — any appended

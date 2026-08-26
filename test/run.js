@@ -359,6 +359,29 @@ const mock = require('./mock.js');
   console.log('link fallbacks: scryfall purchase uri, then name search (expect true / true):',
     cmFallbacks[0].includes('searchString=Dragon+Token'), '/',
     cmFallbacks[1].includes('Search?searchString=Spider'));
+  // Bulk open: one press opens every wanted printing's exact page (window.open stubbed)
+  console.log('open-exact-pages button offers the batch (expect ⧉ Open 3 exact pages):',
+    (await page.textContent('#btn-cmtabs')).trim());
+  const openedTabs = await page.evaluate(() => {
+    const opened = [];
+    window.open = u => { opened.push(u); return {}; };
+    openCmTabs();
+    return opened;
+  });
+  console.log('bulk open hits each exact printing (expect 3 / 700016 / true):',
+    openedTabs.length, '/',
+    (openedTabs[0].match(/idProduct=(\d+)/) || [])[1], '/',
+    openedTabs.every(u => u.includes('cardmarket.com')));
+  const blockedResume = await page.evaluate(() => {
+    let calls = 0;
+    window.open = () => (++calls === 1 ? {} : null);   // browser blocks after the first
+    openCmTabs();                                      // opens 1 of 3, cursor stays at 1
+    const opened = [];
+    window.open = u => { opened.push(u); return {}; };
+    openCmTabs();                                      // resumes with the remaining 2
+    return opened.map(u => (u.match(/idProduct=(\d+)/) || [])[1]);
+  });
+  console.log('pop-up block resumes where it stopped (expect 700300,700301):', blockedResume.join(','));
   await page.keyboard.press('Escape');
   await page.waitForFunction(() =>
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
