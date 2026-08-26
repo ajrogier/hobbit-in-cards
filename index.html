@@ -805,7 +805,7 @@
     <div class="sub">Copies still wanted to cover every placement in the tale, in story order.</div>
     <div id="buylist-rows"></div>
     <div class="auth-actions">
-      <button class="tool-btn" onclick="copyBuyList('cardmarket')" title="Lines Cardmarket's wants importer understands: Nx Name (V.n) Expansion">Copy for Cardmarket</button>
+      <button class="tool-btn" onclick="copyBuyList('cardmarket')" title="Nx Card Name lines — Cardmarket matches any printing by name (front face for // cards); pin exact versions there after import">Copy for Cardmarket</button>
       <button class="tool-btn" onclick="copyBuyList('plain')" title="Plain lines with collector numbers">Copy plain</button>
       <button class="tool-btn" onclick="closeBuyList()">Done</button>
     </div>
@@ -984,37 +984,29 @@ function openBuyList() {
   document.getElementById('buylist-modal').classList.add('show');
 }
 function closeBuyList() { document.getElementById('buylist-modal').classList.remove('show'); }
-/* Cardmarket wants-import lines: "Nx Name (V.n) Expansion". No collector numbers —
-   Cardmarket tells versions apart by a (V.n) suffix, numbered by ascending collector
-   number among same-named cards WITHIN one of their expansions, and shunts non-main
-   printings into a separate "…: Extras" expansion (tokens likewise). */
-function cardmarketLine(r) {
-  const c = r.c;
-  const isToken = c.set === TOKEN_SET_CODE;
-  const inExtras = !isToken && !isMainSet(c);
-  const bucket = cards.filter(x =>
-    x.name === c.name &&
-    (x.set === TOKEN_SET_CODE) === isToken &&
-    (isToken || !isMainSet(x) === inExtras));
-  let version = '';
-  if (bucket.length > 1) {
-    const rank = bucket.slice()
-      .sort((a, b) => (parseInt(a.cn) || 0) - (parseInt(b.cn) || 0) || a.cn.localeCompare(b.cn))
-      .findIndex(x => x.id === c.id) + 1;
-    version = ` (V.${rank})`;
+/* Cardmarket's MTG wants importer matches on the card name ALONE — any appended
+   expansion or (V.n) suffix becomes part of the name and kills the match (verified
+   against a real import). Double-faced/adventure cards match by their FRONT face
+   name only. So: emit "Nx Front Face Name", merging same-named printings and summing
+   their needs. The import lands as any-version wants; exact printings are then pinned
+   in Cardmarket's wants editor. */
+function cardmarketText(rows) {
+  const agg = new Map();
+  for (const r of rows) {
+    const name = r.c.name.split(' // ')[0];
+    agg.set(name, (agg.get(name) || 0) + r.need);
   }
-  const expansion = isToken ? c.setName : c.setName + (inExtras ? ': Extras' : '');
-  return `${r.need}x ${c.name}${version} ${expansion}`.trim();
+  return [...agg].map(([name, n]) => `${n}x ${name}`).join('\n');
 }
 function copyBuyList(format) {
   const rows = buyList();
-  const text = rows.map(r => format === 'cardmarket'
-    ? cardmarketLine(r)
-    : `${r.need}x ${r.c.name} (${r.c.set === TOKEN_SET_CODE ? 'T' : ''}#${r.c.cn})`).join('\n');
+  const text = format === 'cardmarket'
+    ? cardmarketText(rows)
+    : rows.map(r => `${r.need}x ${r.c.name} (${r.c.set === TOKEN_SET_CODE ? 'T' : ''}#${r.c.cn})`).join('\n');
   if (!text) { toast('Nothing to buy — the tale is covered.'); return; }
   navigator.clipboard?.writeText(text)
     .then(() => toast(format === 'cardmarket'
-      ? 'Copied in Cardmarket wants format — paste into Add Decklist.'
+      ? 'Copied for Cardmarket — after importing, pin exact versions in their wants editor.'
       : 'Hunt list copied — happy shopping.'))
     .catch(() => toast('Could not reach the clipboard on this device.'));
 }

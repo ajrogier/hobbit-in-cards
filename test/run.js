@@ -338,11 +338,13 @@ const mock = require('./mock.js');
   console.log('buy list rows (expect 3 / starts 1× Bólg):',
     await page.locator('.buy-row').count(), '/',
     (await page.textContent('.buy-row')).trim().replace(/\s+/g, ' ').slice(0, 30));
-  const cmLines = await page.evaluate(() => buyList().map(r => cardmarketLine(r)));
-  console.log('cardmarket lines (expect true / true / true):',
-    cmLines[0] === '1x Bólg of the North The Hobbit', '/',
-    cmLines[1] === '1x Bilbo, Fellow Conspirator (V.1) The Hobbit: Extras', '/',
-    cmLines[2] === '1x Bilbo, Fellow Conspirator (V.2) The Hobbit: Extras');
+  const cmLines = await page.evaluate(() => cardmarketText(buyList()).split('\n'));
+  console.log('cardmarket lines: name only, twins merged (expect true / true / 2 lines):',
+    cmLines[0] === '1x Bólg of the North', '/',
+    cmLines[1] === '2x Bilbo, Fellow Conspirator', '/', cmLines.length);
+  const faceLine = await page.evaluate(() =>
+    cardmarketText([{ c: { name: "Bilbo, Luckwearer // Burglar's Plot", set: 'hob', cn: '32' }, need: 1 }]));
+  console.log('double-faced names use the front face (expect true):', faceLine === '1x Bilbo, Luckwearer');
   await page.keyboard.press('Escape');
   await page.waitForFunction(() =>
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });

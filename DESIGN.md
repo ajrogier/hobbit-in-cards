@@ -142,13 +142,13 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
 - **Buy list** chip — `buyList()` walks placements in reading order and lists every card whose
   placements outnumber owned copies, at the point of first shortfall: need × name, where it's
   first short, have/placed. The chip shows total wanted copies (✓ when covered).
-  Two exports: **Copy for Cardmarket** emits their wants-import lines
-  `Nx Name (V.n) Expansion` — Cardmarket ignores collector numbers, versions same-named
-  cards within one of their expansions as (V.1), (V.2)… by ascending collector number,
-  and keeps non-main printings in a separate "<Set>: Extras" expansion (tokens in their
-  own) — `cardmarketLine()` reproduces that mapping from set/cn (set_name cached in the
-  card trim, cache key v4). **Copy plain** keeps `2x Name (#cn)` for humans. Both are
-  derived data — visible to visitors too.
+  Two exports: **Copy for Cardmarket** (`cardmarketText()`) emits `Nx Card Name` lines —
+  verified against a real import, their MTG wants importer matches on the name ALONE
+  (front face for `A // B` cards); any appended expansion or version becomes part of the
+  name and kills the match. Same-named printings are merged with needs summed; the import
+  lands as any-version wants and exact printings are pinned in Cardmarket's wants editor.
+  **Copy plain** keeps `2x Name (#cn)` for humans. Both are derived data — visible to
+  visitors too.
 
 ## 4. UI map
 
