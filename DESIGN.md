@@ -141,9 +141,14 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   (neither placed nor quoted), with a live count: the browsing list for what's not yet woven in.
 - **Buy list** chip — `buyList()` walks placements in reading order and lists every card whose
   placements outnumber owned copies, at the point of first shortfall: need × name, where it's
-  first short, have/placed. The chip shows total wanted copies (✓ when covered). "Copy as
-  text" exports `2x Name (#cn)` lines for shops/trades. Both are derived data — visible to
-  visitors too.
+  first short, have/placed. The chip shows total wanted copies (✓ when covered).
+  Two exports: **Copy for Cardmarket** emits their wants-import lines
+  `Nx Name (V.n) Expansion` — Cardmarket ignores collector numbers, versions same-named
+  cards within one of their expansions as (V.1), (V.2)… by ascending collector number,
+  and keeps non-main printings in a separate "<Set>: Extras" expansion (tokens in their
+  own) — `cardmarketLine()` reproduces that mapping from set/cn (set_name cached in the
+  card trim, cache key v4). **Copy plain** keeps `2x Name (#cn)` for humans. Both are
+  derived data — visible to visitors too.
 
 ## 4. UI map
 
