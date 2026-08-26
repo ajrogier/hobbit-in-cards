@@ -22,6 +22,7 @@ const names = [
   ['20','Silvan Reveler','common','Creature — Elf Citizen',''],
   // special art treatment: same name, collector number beyond the main set
   ['300','Bilbo, Fellow Conspirator','rare','Legendary Creature — Halfling Rogue','"I am a burglar, apparently."'],
+  ['301','Bilbo, Fellow Conspirator','rare','Legendary Creature — Halfling Rogue','"I am a burglar, apparently."'],
 ];
 const artFor = cn => cn === '14'
   ? { normal: 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -34,6 +35,7 @@ const artFor = cn => cn === '14'
 const data = names.map(([cn, name, rarity, type_line, flavor]) => ({
   id: 'mock-' + cn,
   name, collector_number: cn, rarity, type_line,
+  set_name: 'The Hobbit',
   flavor_text: flavor,
   oracle_text: '',
   image_uris: artFor(cn),
@@ -46,6 +48,7 @@ const tokens = [
 ].map(([cn, name, rarity, type_line, flavor]) => ({
   id: 'tok-' + cn,
   name, collector_number: cn, rarity, type_line,
+  set_name: 'The Hobbit Tokens',
   flavor_text: flavor,
   oracle_text: '',
   image_uris: null,

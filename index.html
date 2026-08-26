@@ -805,7 +805,8 @@
     <div class="sub">Copies still wanted to cover every placement in the tale, in story order.</div>
     <div id="buylist-rows"></div>
     <div class="auth-actions">
-      <button class="tool-btn" onclick="copyBuyList()">Copy as text</button>
+      <button class="tool-btn" onclick="copyBuyList('cardmarket')" title="Lines Cardmarket's wants importer understands: Nx Name (V.n) Expansion">Copy for Cardmarket</button>
+      <button class="tool-btn" onclick="copyBuyList('plain')" title="Plain lines with collector numbers">Copy plain</button>
       <button class="tool-btn" onclick="closeBuyList()">Done</button>
     </div>
   </div>
@@ -859,7 +860,7 @@
 /* ================= Data & state ================= */
 const SET_CODE = 'hob';
 const TOKEN_SET_CODE = 'thob';   // the set's token cards
-const CACHE_KEY = 'hob_cards_v3';  // v3: includes art crops
+const CACHE_KEY = 'hob_cards_v4';  // v4: includes expansion names
 const CACHE_HOURS = 24;
 const OWNED_KEY = 'hob_owned_v1';
 const STORY_KEY = 'hob_story_v3';
@@ -983,11 +984,38 @@ function openBuyList() {
   document.getElementById('buylist-modal').classList.add('show');
 }
 function closeBuyList() { document.getElementById('buylist-modal').classList.remove('show'); }
-function copyBuyList() {
-  const text = buyList().map(r => `${r.need}x ${r.c.name} (${r.c.set === TOKEN_SET_CODE ? 'T' : ''}#${r.c.cn})`).join('\n');
+/* Cardmarket wants-import lines: "Nx Name (V.n) Expansion". No collector numbers —
+   Cardmarket tells versions apart by a (V.n) suffix, numbered by ascending collector
+   number among same-named cards WITHIN one of their expansions, and shunts non-main
+   printings into a separate "…: Extras" expansion (tokens likewise). */
+function cardmarketLine(r) {
+  const c = r.c;
+  const isToken = c.set === TOKEN_SET_CODE;
+  const inExtras = !isToken && !isMainSet(c);
+  const bucket = cards.filter(x =>
+    x.name === c.name &&
+    (x.set === TOKEN_SET_CODE) === isToken &&
+    (isToken || !isMainSet(x) === inExtras));
+  let version = '';
+  if (bucket.length > 1) {
+    const rank = bucket.slice()
+      .sort((a, b) => (parseInt(a.cn) || 0) - (parseInt(b.cn) || 0) || a.cn.localeCompare(b.cn))
+      .findIndex(x => x.id === c.id) + 1;
+    version = ` (V.${rank})`;
+  }
+  const expansion = isToken ? c.setName : c.setName + (inExtras ? ': Extras' : '');
+  return `${r.need}x ${c.name}${version} ${expansion}`.trim();
+}
+function copyBuyList(format) {
+  const rows = buyList();
+  const text = rows.map(r => format === 'cardmarket'
+    ? cardmarketLine(r)
+    : `${r.need}x ${r.c.name} (${r.c.set === TOKEN_SET_CODE ? 'T' : ''}#${r.c.cn})`).join('\n');
   if (!text) { toast('Nothing to buy — the tale is covered.'); return; }
   navigator.clipboard?.writeText(text)
-    .then(() => toast('Hunt list copied — happy shopping.'))
+    .then(() => toast(format === 'cardmarket'
+      ? 'Copied in Cardmarket wants format — paste into Add Decklist.'
+      : 'Hunt list copied — happy shopping.'))
     .catch(() => toast('Could not reach the clipboard on this device.'));
 }
 
@@ -1040,6 +1068,7 @@ function trimCard(c, setCode) {
   return {
     id: c.id,
     set: setCode,
+    setName: c.set_name || '',
     name: c.name,
     cn: c.collector_number,
     rarity: c.rarity,

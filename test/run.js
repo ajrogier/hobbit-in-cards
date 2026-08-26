@@ -41,7 +41,7 @@ const mock = require('./mock.js');
   await page.waitForSelector('#view-tracker .card');
 
   // Stats (mock set: 20 main cards + 1 special art #300)
-  console.log('total (expect 23 incl. 2 tokens):', await page.textContent('#stat-total'));
+  console.log('total (expect 24 incl. 2 tokens):', await page.textContent('#stat-total'));
 
   // Toggle two cards owned
   await page.click('.card[data-id="mock-8"]');   // Gollum
@@ -89,13 +89,13 @@ const mock = require('./mock.js');
   console.log('main-set total (expect 20):', await page.textContent('#stat-total'));
   console.log('special hidden (expect 0):', await page.locator('.card[data-id="mock-300"]').count());
   await page.click('#chip-main');
-  console.log('full total again (expect 23):', await page.textContent('#stat-total'));
+  console.log('full total again (expect 24):', await page.textContent('#stat-total'));
   console.log('token shown with T# (expect T#1):', (await page.textContent('.card[data-id="tok-1"] .cn')).trim());
 
   // Filter: missing only should exclude owned
   await page.click('#chip-missing');
   const missingCount = await page.locator('#tracker-grid .card').count();
-  console.log('missing-only count (expect 21):', missingCount);
+  console.log('missing-only count (expect 22):', missingCount);
   await page.click('#chip-missing');
 
   // Search
@@ -322,19 +322,27 @@ const mock = require('./mock.js');
   await page.locator('.sec-add', { hasText: 'Add cards' }).first().click();
   await page.fill('#picker-search', 'bolg');
   await page.click('#picker-results .pick');
+  await page.fill('#picker-search', 'burglar');     // flavor hit: all three Bilbos
+  await page.locator('#picker-results .pick').nth(1).click();   // extras #300
+  await page.locator('#picker-results .pick').nth(2).click();   // extras #301
   await page.click('#picker-modal .auth-actions .tool-btn');
   await page.click('#nav-tracker');
   await page.click('#chip-unused');
-  console.log('unused-in-tale count (expect 20 of 23):', await page.locator('#tracker-grid .card').count());
+  console.log('unused-in-tale count (expect 19 of 24):', await page.locator('#tracker-grid .card').count());
   console.log('used card hidden from unused view (expect 0):',
     await page.locator('#tracker-grid .card[data-id="mock-8"]').count());
   await page.click('#chip-unused');
-  console.log('buy list chip counts wanted copies (expect 1):',
+  console.log('buy list chip counts wanted copies (expect 3):',
     (await page.textContent('#btn-buylist .cnt')).trim());
   await page.click('#btn-buylist');
-  console.log('buy list row (expect 1 / starts 1× Bólg):',
+  console.log('buy list rows (expect 3 / starts 1× Bólg):',
     await page.locator('.buy-row').count(), '/',
     (await page.textContent('.buy-row')).trim().replace(/\s+/g, ' ').slice(0, 30));
+  const cmLines = await page.evaluate(() => buyList().map(r => cardmarketLine(r)));
+  console.log('cardmarket lines (expect true / true / true):',
+    cmLines[0] === '1x Bólg of the North The Hobbit', '/',
+    cmLines[1] === '1x Bilbo, Fellow Conspirator (V.1) The Hobbit: Extras', '/',
+    cmLines[2] === '1x Bilbo, Fellow Conspirator (V.2) The Hobbit: Extras');
   await page.keyboard.press('Escape');
   await page.waitForFunction(() =>
     document.getElementById('sync-chip').textContent.includes('synced'), { timeout: 5000 });
