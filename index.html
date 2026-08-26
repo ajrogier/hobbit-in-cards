@@ -651,6 +651,7 @@
   .cm-link:hover { background: var(--overlay); }
   .cm-link.loose { color: var(--parchment-dim); border-color: var(--border); }
   .buy-hint { color: var(--ink-faint); font-size: 13px; margin-top: 10px; }
+  .buy-total { color: var(--gold-bright); font-size: 14.5px; margin: 6px 0 2px; }
   .place-label { font-size: 14.5px; color: var(--parchment); flex: 0 1 auto; }
 
   /* ---------- Card picker ---------- */
@@ -816,6 +817,7 @@
     <h3>The Hunt List</h3>
     <div class="sub">Copies still wanted to cover every placement in the tale, in story order.
       Every printing is its own row — same name, different art, different row.</div>
+    <div class="buy-total" id="buylist-total"></div>
     <div id="buylist-rows"></div>
     <div class="buy-hint">Copy for Cardmarket uses their product names — a (V.n) suffix picks the
       version where an expansion has several. If a line bounces on import, its row's
@@ -877,7 +879,7 @@
 /* ================= Data & state ================= */
 const SET_CODE = 'hob';
 const TOKEN_SET_CODE = 'thob';   // the set's token cards
-const CACHE_KEY = 'hob_cards_v5';  // v5: includes artist + Cardmarket product ids
+const CACHE_KEY = 'hob_cards_v6';  // v6: includes Cardmarket trend prices
 const CACHE_HOURS = 24;
 const OWNED_KEY = 'hob_owned_v1';
 const STORY_KEY = 'hob_story_v3';
@@ -984,6 +986,9 @@ function buyList() {
   }
   return rows;
 }
+/* Cardmarket trend price of one printing (EUR) — foil price when the printing is foil-only */
+function cardEur(c) { const p = parseFloat(c.eur ?? c.eurF); return isNaN(p) ? 0 : p; }
+function buyTotal(rows) { return rows.reduce((a, r) => a + r.need * cardEur(r.c), 0); }
 function toggleUnused(el) {
   unusedOnly = !unusedOnly;
   el.classList.toggle('on', unusedOnly);
@@ -1007,12 +1012,17 @@ function openBuyList() {
           onclick="openZoomCard('${r.c.id}')">` : ''}
         <div class="buy-info">
           <div><b>${r.need}×</b> ${esc(r.c.name)} <span class="cn">${r.c.set === TOKEN_SET_CODE ? 'T' : ''}#${r.c.cn}</span></div>
-          <div class="buy-sub">${r.c.artist ? `art by ${esc(r.c.artist)} · ` : ''}first short in ${esc(r.where)} · have ${r.have} / placed ${r.placed}</div>
+          <div class="buy-sub">${r.c.artist ? `art by ${esc(r.c.artist)} · ` : ''}first short in ${esc(r.where)} · have ${r.have} / placed ${r.placed} · ${cardEur(r.c) ? '€' + cardEur(r.c).toFixed(2) : 'no price yet'}</div>
         </div>
         <a class="cm-link${r.c.cm ? '' : ' loose'}" href="${cmLink(r.c)}" target="_blank" rel="noopener"
           title="${r.c.cm ? 'Opens this exact printing on Cardmarket' : 'No exact link known yet — opens a name search on Cardmarket'}">Cardmarket ↗</a>
       </div>`).join('')
     : `<p class="empty-ch">The tale is fully stocked — every placement has its copy.</p>`;
+  const total = buyTotal(rows), unpriced = rows.filter(r => !cardEur(r.c)).length;
+  document.getElementById('buylist-total').textContent = rows.length
+    ? `≈ €${total.toFixed(2)} at Cardmarket trend prices` +
+      (unpriced ? ` — ${unpriced} card${unpriced === 1 ? ' has' : 's have'} no price yet` : '')
+    : '';
   cmTabCursor = 0;
   updateCmTabsBtn(rows.length);
   document.getElementById('buylist-modal').classList.add('show');
@@ -1147,6 +1157,8 @@ function trimCard(c, setCode) {
     artist: c.artist || (c.card_faces && c.card_faces[0].artist) || '',
     cm: c.cardmarket_id || null,                       // Cardmarket idProduct: exact-printing deep link
     cmUri: (c.purchase_uris && c.purchase_uris.cardmarket) || null,
+    eur: (c.prices && c.prices.eur) || null,           // Cardmarket trend, via Scryfall (daily)
+    eurF: (c.prices && c.prices.eur_foil) || null,     // foil-only printings price under eur_foil
     uri: c.scryfall_uri,
   };
 }
@@ -1352,8 +1364,11 @@ function updateStats() {
   document.getElementById('chip-main').classList.toggle('on', !!settings.mainOnly);
   const used = storyUsedIds();
   document.querySelector('#chip-unused .cnt').textContent = pool.filter(c => !used.has(c.id)).length;
-  const wanted = buyList().reduce((a, r) => a + r.need, 0);
-  document.querySelector('#btn-buylist .cnt').textContent = wanted || '✓';
+  const buyRows = buyList();
+  const wanted = buyRows.reduce((a, r) => a + r.need, 0);
+  const trend = buyTotal(buyRows);
+  document.querySelector('#btn-buylist .cnt').textContent =
+    wanted ? (trend ? `${wanted} · ~€${Math.round(trend)}` : wanted) : '✓';
   for (const chip of document.querySelectorAll('.chip[data-r]')) {
     const r = chip.dataset.r;
     const rc = pool.filter(c => c.rarity === r);

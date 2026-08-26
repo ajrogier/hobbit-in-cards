@@ -141,7 +141,11 @@ per-placement ‹ › ✕ buttons). Starting a section from the blank page flips
   (neither placed nor quoted), with a live count: the browsing list for what's not yet woven in.
 - **Buy list** chip — `buyList()` walks placements in reading order and lists every card whose
   placements outnumber owned copies, at the point of first shortfall: need × name, where it's
-  first short, have/placed. The chip shows total wanted copies (✓ when covered).
+  first short, have/placed. The chip shows total wanted copies (✓ when covered) and the
+  hunt's total at Cardmarket trend prices — Scryfall's `prices.eur` / `prices.eur_foil`
+  (foil-only printings price under eur_foil; `cardEur()` falls back), refreshed with the
+  daily card cache. The dialog shows the exact total and per-row unit prices; cards
+  Scryfall has no price for yet are counted out loud rather than silently priced €0.
   Rows are PER PRINTING — same name in different arts stays separate, distinguished by a
   thumbnail (tap to zoom) and the artist line. Each row carries a deep link to that exact
   printing on Cardmarket (`cmLink()`): Scryfall's `cardmarket_id` is Cardmarket's idProduct,

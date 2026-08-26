@@ -37,7 +37,9 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   exportable as plain text or in Cardmarket's wants-import format: their own product
   names, one line per printing, with the `(V.n)` version suffix their importer
   understands where an expansion holds several printings of a name (front face for
-  // cards; a line that still bounces falls back to its row's exact link).
+  // cards; a line that still bounces falls back to its row's exact link). The Buy
+  list chip and dialog also total the hunt at **Cardmarket trend prices** (via
+  Scryfall, refreshed daily), with a per-row unit price.
 - **Copies vs. the tale** — you track regular and foil ✦ copies per card (special arts are
   their own card entries, so they need no separate counter). If a card has more placements
   than you own copies, the uncovered placements glow amber ("needs another copy") — your

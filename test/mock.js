@@ -44,6 +44,10 @@ const data = names.map(([cn, name, rarity, type_line, flavor]) => ({
   image_uris: artFor(cn),
   artist: cn === '300' ? 'Alan Lee' : cn === '301' ? 'John Howe' : '',
   cardmarket_id: cmIds[cn] || null,
+  // trend prices: #300 is foil-only (price under eur_foil); buy-list total = 2.50+4.00+3.00
+  prices: cn === '16' ? { eur: '2.50' }
+    : cn === '300' ? { eur: null, eur_foil: '4.00' }
+    : cn === '301' ? { eur: '3.00' } : { eur: '0.10' },
   scryfall_uri: 'https://scryfall.com/',
 }));
 // Token companion set (thob): same collector numbers restart at 1

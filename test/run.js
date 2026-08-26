@@ -332,9 +332,14 @@ const mock = require('./mock.js');
   console.log('used card hidden from unused view (expect 0):',
     await page.locator('#tracker-grid .card[data-id="mock-8"]').count());
   await page.click('#chip-unused');
-  console.log('buy list chip counts wanted copies (expect 3):',
+  console.log('buy list chip counts wanted copies + trend total (expect 3 · ~€10):',
     (await page.textContent('#btn-buylist .cnt')).trim());
   await page.click('#btn-buylist');
+  console.log('hunt list totals the trend price (expect ≈ €9.50…):',
+    (await page.textContent('#buylist-total')).trim());
+  console.log('rows carry unit trend prices, foil-only falls back (expect true / true):',
+    (await page.textContent('#buylist-rows')).includes('€2.50'), '/',
+    (await page.textContent('#buylist-rows')).includes('€4.00'));
   console.log('buy list rows (expect 3 / starts 1× Bólg):',
     await page.locator('.buy-row').count(), '/',
     (await page.textContent('.buy-row')).trim().replace(/\s+/g, ' ').slice(0, 30));
