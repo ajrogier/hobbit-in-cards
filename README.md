@@ -9,9 +9,10 @@ The Hobbit set (HOB) — and tracks which cards of the tale you own.
   with search, rarity filters, owned/missing filters, quantity and foil counts. Foil copies
   shimmer on the card; on desktop the hover pill marks a foil in one click. A **Main set
   #1–193** chip narrows the quest to the numbered main set — special art treatments
-  (#194+) are hidden and stop counting toward progress. **Fracture foils** are hidden
-  and uncounted by default (a stretch goal — the chip shows how many exist and opts
-  you in). Both goals sync with the collection.
+  (#194+) are hidden and stop counting toward progress. **Surge foils** (the Gift
+  Bundle's seasonal Shire lands — fracture foils too, should a set have them) are
+  hidden and uncounted by default (a stretch goal — the chip shows how many exist and
+  opts you in). Both goals sync with the collection.
 - **The Tale view** (the landing page) — a blank page you author yourself. Create sections and subsections
   (auto-numbered, with optional descriptions), reorder, rename, delete. Fill each part
   from a card picker that searches the whole set by name, type, or flavor text — every

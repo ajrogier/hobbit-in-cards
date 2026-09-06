@@ -91,17 +91,18 @@ const mock = require('./mock.js');
   await page.click('#chip-main');
   console.log('full total again (expect 24):', await page.textContent('#stat-total'));
 
-  // Fracture foils: hidden and uncounted by default, a chip opts in
-  console.log('fracture foils hidden by default (expect 0 / 0):',
+  // Surge/fracture foils: hidden and uncounted by default, a chip opts in
+  console.log('surge + fracture foils hidden by default (expect 0 / 0):',
     await page.locator('#tracker-grid .card[data-id="mock-310"]').count(), '/',
     await page.locator('#tracker-grid .card[data-id="mock-311"]').count());
-  console.log('fracture chip shows how many exist (expect 2):',
-    (await page.textContent('#chip-frac .cnt')).trim());
-  await page.click('#chip-frac');
-  console.log('opted in: fracture foils appear and count (expect 1 / 26):',
+  console.log('surge chip shows how many exist (expect 2):',
+    (await page.textContent('#chip-surge .cnt')).trim());
+  await page.click('#chip-surge');
+  console.log('opted in: special foils appear and count (expect 1 / 1 / 26):',
     await page.locator('#tracker-grid .card[data-id="mock-310"]').count(), '/',
+    await page.locator('#tracker-grid .card[data-id="mock-311"]').count(), '/',
     await page.textContent('#stat-total'));
-  await page.click('#chip-frac');
+  await page.click('#chip-surge');
   console.log('opted back out (expect 24):', await page.textContent('#stat-total'));
   console.log('token shown with T# (expect T#1):', (await page.textContent('.card[data-id="tok-1"] .cn')).trim());
 

@@ -60,14 +60,16 @@ owned        (key hob_owned_v1)
     so the UI no longer offers it; existing s counts still display and count.
 
 settings     (key hob_settings_v1, synced inside collection.json)
-  { mainOnly, showFrac }  — collecting goals, merged over SETTINGS_DEFAULTS on load so
+  { mainOnly, showSurge }  — collecting goals, merged over SETTINGS_DEFAULTS on load so
   old synced payloads pick up new keys. mainOnly: true narrows the Collection view,
   quest progress and rarity counts to collector numbers 1..MAIN_SET_MAX (193); special
-  art treatments (#194+) are hidden and uncounted. showFrac: fracture-foil printings
-  (Scryfall promo_types/frame_effects containing "fractur", trimmed to the `frac` flag)
-  are hidden and uncounted by DEFAULT — a stretch goal; the chip (which shows how many
-  exist, and hides itself when the set has none) opts in. Both filters act in
-  collectible(), so every statistic follows. The tale picker always shows all prints.
+  art treatments (#194+) are hidden and uncounted. showSurge: special-foil printings —
+  Scryfall promo_types/frame_effects matching surgefoil or fractur*, trimmed to the
+  `sfoil` flag (HOB's are the Gift Bundle's surge-foil seasonal Shire lands; the set has
+  no fracture foils, `set:hob is:fracturefoil` is empty) — are hidden and uncounted by
+  DEFAULT, a stretch goal; the chip (which shows how many exist, and hides itself when
+  the set has none) opts in. Both filters act in collectible(), so every statistic
+  follows. The tale picker always shows all prints.
 
 story        (key hob_story_v3, synced inside collection.json)
   { sections: [ { id, title, blurb, cards: [entry], subs: [ {id, title, blurb, cards: [entry]} ] } ] }
