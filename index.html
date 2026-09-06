@@ -766,6 +766,7 @@
       <button class="chip" id="chip-unused" onclick="toggleUnused(this)" title="Cards that appear nowhere in the tale yet">Unused in tale <span class="cnt"></span></button>
       <button class="chip" id="btn-buylist" onclick="openBuyList()" title="Copies still wanted to cover every placement in the tale">Buy list <span class="cnt"></span></button>
       <button class="chip" id="chip-main" onclick="toggleMainOnly(this)" title="Collect only the numbered main set — special art treatments (#194+) are hidden and don't count toward the quest">Main set #1–193</button>
+      <button class="chip" id="chip-frac" onclick="toggleFrac(this)" title="Fracture foils are hidden and uncounted by default — a stretch goal; toggle to chase them too">Fracture foils <span class="cnt"></span></button>
     </div>
     <div class="grid" id="tracker-grid"></div>
   </section>
@@ -879,7 +880,7 @@
 /* ================= Data & state ================= */
 const SET_CODE = 'hob';
 const TOKEN_SET_CODE = 'thob';   // the set's token cards
-const CACHE_KEY = 'hob_cards_v6';  // v6: includes Cardmarket trend prices
+const CACHE_KEY = 'hob_cards_v7';  // v7: flags fracture-foil printings
 const CACHE_HOURS = 24;
 const OWNED_KEY = 'hob_owned_v1';
 const STORY_KEY = 'hob_story_v3';
@@ -905,8 +906,10 @@ let owned = load(OWNED_KEY, {});      // id -> {q: regular qty, f: foil qty, s: 
    entry: { cardId, note } — the same card (or different printings of it) may be
    placed at any number of points; copies owned cover entries in reading order. */
 let story = load(STORY_KEY, { sections: [] });
-/* Collecting goal — mainOnly: chase only the numbered main set (#1–193), or every printing. */
-let settings = load(SETTINGS_KEY, { mainOnly: false });
+/* Collecting goal — mainOnly: chase only the numbered main set (#1–193), or every printing.
+   showFrac: fracture foils are a stretch goal, hidden and uncounted unless opted in. */
+const SETTINGS_DEFAULTS = { mainOnly: false, showFrac: false };
+let settings = Object.assign({}, SETTINGS_DEFAULTS, load(SETTINGS_KEY, {}));
 let view = 'story';   // the tale is the front page; the ledger is one tap away
 let rarityFilter = new Set();
 let missingOnly = false, ownedOnly = false, unusedOnly = false;
@@ -1159,6 +1162,8 @@ function trimCard(c, setCode) {
     cmUri: (c.purchase_uris && c.purchase_uris.cardmarket) || null,
     eur: (c.prices && c.prices.eur) || null,           // Cardmarket trend, via Scryfall (daily)
     eurF: (c.prices && c.prices.eur_foil) || null,     // foil-only printings price under eur_foil
+    frac: [...(c.promo_types || []), ...(c.frame_effects || [])]
+      .some(t => String(t).toLowerCase().includes('fractur')) ? 1 : 0,
     uri: c.scryfall_uri,
   };
 }
@@ -1230,7 +1235,7 @@ async function loadCollection() {
     const data = JSON.parse(unb64(j.content));
     owned = data.owned || {};
     story = data.story || { sections: [] };
-    if (data.settings) settings = data.settings;
+    if (data.settings) settings = Object.assign({}, SETTINGS_DEFAULTS, data.settings);
     save(OWNED_KEY, owned); save(STORY_KEY, story); save(SETTINGS_KEY, settings);
     setSyncStatus(token ? 'saved' : 'viewonly');
     refresh();
@@ -1350,8 +1355,13 @@ function signOut() {
 /* ================= Stats ================= */
 function isOwned(id) { return copiesOf(id) > 0; }
 function isMainSet(c) { return c.set !== TOKEN_SET_CODE && (parseInt(c.cn) || 0) <= MAIN_SET_MAX; }
-/* The cards the quest is about: the whole set, or just the numbered main set. */
-function collectible() { return settings.mainOnly ? cards.filter(isMainSet) : cards; }
+/* The cards the quest is about: the whole set, or just the numbered main set.
+   Fracture foils stay out of the view and every statistic unless opted in. */
+function collectible() {
+  let pool = settings.mainOnly ? cards.filter(isMainSet) : cards;
+  if (!settings.showFrac) pool = pool.filter(c => !c.frac);
+  return pool;
+}
 function updateStats() {
   const pool = collectible();
   const total = pool.length;
@@ -1362,6 +1372,11 @@ function updateStats() {
   document.getElementById('stat-pct').textContent = pct + '%';
   document.getElementById('main-progress').style.width = pct + '%';
   document.getElementById('chip-main').classList.toggle('on', !!settings.mainOnly);
+  const fracN = cards.filter(c => c.frac).length;
+  const chipFrac = document.getElementById('chip-frac');
+  chipFrac.style.display = fracN ? '' : 'none';   // no fracture foils in the data: no chip
+  chipFrac.classList.toggle('on', !!settings.showFrac);
+  chipFrac.querySelector('.cnt').textContent = fracN || '';
   const used = storyUsedIds();
   document.querySelector('#chip-unused .cnt').textContent = pool.filter(c => !used.has(c.id)).length;
   const buyRows = buyList();
@@ -1899,6 +1914,12 @@ function toggleMainOnly(el) {
   settings.mainOnly = !settings.mainOnly;
   if (canEdit()) persist();               // the collecting goal syncs with the collection
   else save(SETTINGS_KEY, settings);      // visitors just filter their own view
+  refresh();
+}
+function toggleFrac(el) {
+  settings.showFrac = !settings.showFrac;
+  if (canEdit()) persist();               // part of the collecting goal, syncs the same way
+  else save(SETTINGS_KEY, settings);
   refresh();
 }
 

@@ -23,7 +23,11 @@ const names = [
   // special art treatment: same name, collector number beyond the main set
   ['300','Bilbo, Fellow Conspirator','rare','Legendary Creature — Halfling Rogue','"I am a burglar, apparently."'],
   ['301','Bilbo, Fellow Conspirator','rare','Legendary Creature — Halfling Rogue','"I am a burglar, apparently."'],
+  // fracture foils: hidden from the collection view and stats by default
+  ['310','Erebor Reclaimed','mythic','Sorcery',''],
+  ['311','The Arkenstone','mythic','Legendary Artifact',''],
 ];
+const fracCns = new Set(['310', '311']);
 const artFor = cn => cn === '14'
   ? { normal: 'data:image/svg+xml;utf8,' + encodeURIComponent(
       '<svg xmlns="http://www.w3.org/2000/svg" width="488" height="680">' +
@@ -44,6 +48,7 @@ const data = names.map(([cn, name, rarity, type_line, flavor]) => ({
   image_uris: artFor(cn),
   artist: cn === '300' ? 'Alan Lee' : cn === '301' ? 'John Howe' : '',
   cardmarket_id: cmIds[cn] || null,
+  promo_types: fracCns.has(cn) ? ['fracturefoil'] : [],
   // trend prices: #300 is foil-only (price under eur_foil); buy-list total = 2.50+4.00+3.00
   prices: cn === '16' ? { eur: '2.50' }
     : cn === '300' ? { eur: null, eur_foil: '4.00' }
